@@ -7,6 +7,21 @@ RSpec.describe RuboCop::Cop::Layout::BlockAlignment, :config do
     { 'EnforcedStyleAlignWith' => 'either' }
   end
 
+  context 'with begin-end block' do
+    it 'registers an offense for mismatched block end' do
+      expect_offense(<<~RUBY)
+        begin
+          end
+          ^^^ `end` at 2, 2 is not aligned with `begin` at 1, 0.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        begin
+        end
+      RUBY
+    end
+  end
+
   context 'when the block has no arguments' do
     it 'registers an offense for mismatched block end' do
       expect_offense(<<~RUBY)
@@ -636,6 +651,14 @@ RSpec.describe RuboCop::Cop::Layout::BlockAlignment, :config do
       RUBY
     end
 
+    it 'allows when start_of_line aligned for begin-end block' do
+      expect_no_offenses(<<~RUBY)
+        x = begin
+          baz
+        end
+      RUBY
+    end
+
     it 'errors when do aligned' do
       expect_offense(<<~RUBY)
         foo.bar
@@ -649,6 +672,21 @@ RSpec.describe RuboCop::Cop::Layout::BlockAlignment, :config do
         foo.bar
           .each do
             baz
+        end
+      RUBY
+    end
+
+    it 'errors when begin aligned for begin-end block' do
+      expect_offense(<<~RUBY)
+        x = begin
+              baz
+            end
+            ^^^ `end` at 3, 4 is not aligned with `x = begin` at 1, 0.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        x = begin
+              baz
         end
       RUBY
     end
@@ -668,6 +706,14 @@ RSpec.describe RuboCop::Cop::Layout::BlockAlignment, :config do
       RUBY
     end
 
+    it 'allows when do aligned for begin-end block' do
+      expect_no_offenses(<<~RUBY)
+        begin
+          baz
+        end
+      RUBY
+    end
+
     it 'errors when start_of_line aligned' do
       expect_offense(<<~RUBY)
         foo.bar
@@ -680,6 +726,23 @@ RSpec.describe RuboCop::Cop::Layout::BlockAlignment, :config do
       expect_correction(<<~RUBY)
         foo.bar
           .each do
+            baz
+          end
+      RUBY
+    end
+
+    it 'errors when start_of_line aligned for begin-end block' do
+      expect_offense(<<~RUBY)
+        x =
+          begin
+            baz
+        end
+        ^^^ `end` at 4, 0 is not aligned with `begin` at 2, 2.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        x =
+          begin
             baz
           end
       RUBY

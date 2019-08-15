@@ -26,10 +26,18 @@ module RuboCop
       #        baz
       #          end
       #
+      #   begin
+      #     baz
+      #     end
+      #
       #   # good
       #
       #   variable = lambda do |i|
       #     i
+      #   end
+      #
+      #   variable = begin
+      #     baz
       #   end
       #
       # @example EnforcedStyleAlignWith: start_of_block
@@ -40,10 +48,20 @@ module RuboCop
       #        baz
       #          end
       #
+      #   x =
+      #     begin
+      #       baz
+      #   end
+      #
       #   # good
       #
       #   foo.bar
       #     .each do
+      #       baz
+      #     end
+      #
+      #   x =
+      #     begin
       #       baz
       #     end
       #
@@ -55,11 +73,19 @@ module RuboCop
       #        baz
       #          end
       #
+      #   x = begin
+      #         baz
+      #       end
+      #
       #   # good
       #
       #   foo.bar
       #     .each do
       #        baz
+      #   end
+      #
+      #   x = begin
+      #     baz
       #   end
       class BlockAlignment < Cop
         include ConfigurableEnforcedStyle
@@ -79,6 +105,7 @@ module RuboCop
         def on_block(node)
           check_block_alignment(start_for_block_node(node), node)
         end
+        alias on_kwbegin on_block
 
         def style_parameter_name
           'EnforcedStyleAlignWith'

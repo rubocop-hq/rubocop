@@ -109,9 +109,9 @@ module RuboCop
 
       def default_configuration
         @default_configuration ||= begin
-                                     print 'Default ' if debug?
-                                     load_file(DEFAULT_FILE)
-                                   end
+          print 'Default ' if debug?
+          load_file(DEFAULT_FILE)
+        end
       end
 
       # Merges the given configuration with the default one. If

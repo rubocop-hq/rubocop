@@ -40,9 +40,9 @@ module RuboCop
       @path_cache[dir] ||= ConfigLoader.configuration_file_for(dir)
       path = @path_cache[dir]
       @object_cache[path] ||= begin
-                                print "For #{dir}: " if ConfigLoader.debug?
-                                ConfigLoader.configuration_from_file(path)
-                              end
+        print "For #{dir}: " if ConfigLoader.debug?
+        ConfigLoader.configuration_from_file(path)
+      end
     end
   end
 end

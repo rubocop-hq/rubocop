@@ -476,10 +476,18 @@ foo.bar
      baz
        end
 
+begin
+  baz
+  end
+
 # good
 
 variable = lambda do |i|
   i
+end
+
+variable = begin
+  baz
 end
 ```
 #### EnforcedStyleAlignWith: start_of_block
@@ -492,10 +500,20 @@ foo.bar
      baz
        end
 
+x =
+  begin
+    baz
+end
+
 # good
 
 foo.bar
   .each do
+    baz
+  end
+
+x =
+  begin
     baz
   end
 ```
@@ -509,11 +527,19 @@ foo.bar
      baz
        end
 
+x = begin
+      baz
+    end
+
 # good
 
 foo.bar
   .each do
      baz
+end
+
+x = begin
+  baz
 end
 ```
 

@@ -14,6 +14,7 @@
 * [#7262](https://github.com/rubocop-hq/rubocop/issues/7262): `Lint/FormatParameterMismatch` did not recognize named format sequences like `%.2<name>f` where the name appears after some modifiers. ([@buehmann][])
 * [#7253](https://github.com/rubocop-hq/rubocop/issues/7253): Fix an error for `Lint/NumberConversion` when `#to_i` called without a receiver. ([@koic][])
 * [#7271](https://github.com/rubocop-hq/rubocop/issues/7271), [#6498](https://github.com/rubocop-hq/rubocop/issues/6498): Fix an interference between `Style/TrailingCommaIn*Literal` and `Layout/Multiline*BraceLayout` for arrays and hashes. ([@buehmann][])
+* [#7286](https://github.com/rubocop-hq/rubocop/pull/7286): Treat `begin`-`end` blocks like `do`-`end` blocks in `Layout/BlockAlignment`. ([@fphilipe][])
 
 ### Changes
 
