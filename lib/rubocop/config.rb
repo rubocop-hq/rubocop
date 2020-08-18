@@ -253,8 +253,19 @@ module RuboCop
         cop_metadata = self[qualified_cop_name]
         next unless cop_metadata['Enabled'] == 'pending'
 
+        next if pending_cop_enabled_by_version?(cop_metadata)
+
         pending_cops << CopConfig.new(qualified_cop_name, cop_metadata)
       end
+    end
+
+    def pending_cop_enabled_by_version?(cop_metadata)
+      version_added = cop_metadata['VersionAdded']
+      enabled_up_to = for_all_cops['EnableNewCopsUpTo']
+
+      !version_added.nil? && !version_added.blank? &&
+        !enabled_up_to.nil? && !enabled_up_to.blank? &&
+        Gem::Version.new(enabled_up_to) >= Gem::Version.new(version_added)
     end
 
     private

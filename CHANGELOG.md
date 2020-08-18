@@ -9,6 +9,7 @@
 * [#8472](https://github.com/rubocop-hq/rubocop/issues/8472): Add new `Lint/UselessMethodDefinition` cop. ([@fatkodima][])
 * [#8531](https://github.com/rubocop-hq/rubocop/issues/8531): Add new `Lint/EmptyFile` cop. ([@fatkodima][])
 * Add new `Lint/TrailingCommaInAttributeDeclaration` cop. ([@drenmi][])
+* Add new `EnableNewCopsUpTo` option to `.rubocop.yml` to load all pending cops up to the specified version of Rubocop. ([@zofrex][])
 
 ### Bug fixes
 
@@ -4799,3 +4800,4 @@
 [@wcmonty]: https://github.com/wcmonty
 [@nguyenquangminh0711]: https://github.com/nguyenquangminh0711
 [@chocolateboy]: https://github.com/chocolateboy
+[@zofrex]: https://github.com/zofrex
