@@ -55,6 +55,10 @@ to decide if you want to enable or disable them.
 
 To suppress this message set `NewCops` to either `enable` or `disable` in your `.rubocop.yml` file.
 
+Alternatively, set `EnableNewCopsUpTo` to a version number to enable all cops
+that were added to Rubocop in versions up to and including the version number
+you specify.
+
 The following setting or using `rubocop --enable-pending-cops` command-line option, pending cops are enabled in bulk.
 
 [source,yaml]
@@ -71,7 +75,15 @@ AllCops:
   NewCops: disable
 ----
 
-The command-line options takes precedence over `.rubocop.yml` file.
+With the following setting, pending cops added in version 0.80 or earlier are enabled, newer pending cops are disabled.
+
+[source,yaml]
+----
+AllCops:
+  EnableNewCopsUpTo: '0.80'
+---
+
+The command-line options take precedence over `.rubocop.yml` file.
 
 Or set `Enabled` to either `true` or `false` in your `.rubocop.yml` file.
 

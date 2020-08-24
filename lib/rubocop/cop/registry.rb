@@ -172,7 +172,8 @@ module RuboCop
         return false if @options[:disable_pending_cops]
 
         cop_cfg.fetch('Enabled') == 'pending' &&
-          (@options[:enable_pending_cops] || config.enabled_new_cops?)
+          (@options[:enable_pending_cops] || config.enabled_new_cops? ||
+            config.pending_cop_enabled_by_version?(cop_cfg))
       end
 
       def names

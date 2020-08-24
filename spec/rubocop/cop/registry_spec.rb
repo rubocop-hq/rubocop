@@ -203,7 +203,7 @@ RSpec.describe RuboCop::Cop::Registry do
     context 'when new cops are introduced' do
       let(:config) do
         RuboCop::Config.new(
-          'Lint/BooleanSymbol' => { 'Enabled' => 'pending' }
+          'Lint/BooleanSymbol' => { 'Enabled' => 'pending', 'VersionAdded' => '0.9.0' }
         )
       end
 
@@ -273,7 +273,7 @@ RSpec.describe RuboCop::Cop::Registry do
         let(:config) do
           RuboCop::Config.new(
             'AllCops' => { 'NewCops' => 'pending' },
-            'Lint/BooleanSymbol' => { 'Enabled' => 'pending' }
+            'Lint/BooleanSymbol' => { 'Enabled' => 'pending', 'VersionAdded' => '0.9.0' }
           )
         end
 
@@ -287,7 +287,7 @@ RSpec.describe RuboCop::Cop::Registry do
         let(:config) do
           RuboCop::Config.new(
             'AllCops' => { 'NewCops' => 'disable' },
-            'Lint/BooleanSymbol' => { 'Enabled' => 'pending' }
+            'Lint/BooleanSymbol' => { 'Enabled' => 'pending', 'VersionAdded' => '0.9.0' }
           )
         end
 
@@ -308,6 +308,32 @@ RSpec.describe RuboCop::Cop::Registry do
         it 'includes them' do
           result = registry.enabled(config, [])
           expect(result).to include(RuboCop::Cop::Lint::BooleanSymbol)
+        end
+      end
+
+      context 'when specifying `EnableNewCopsUpTo:` option in .rubocop.yml' do
+        let(:config) do
+          RuboCop::Config.new(
+            'AllCops' => { 'EnableNewCopsUpTo' => '0.87' },
+            'Lint/BooleanSymbol' => { 'Enabled' => 'pending', 'VersionAdded' => '0.86' },
+            'Lint/DuplicateMethods' => { 'Enabled' => 'pending', 'VersionAdded' => '0.87' },
+            'Metrics/MethodLength' => { 'Enabled' => 'pending', 'VersionAdded' => '0.88' }
+          )
+        end
+
+        it 'includes cops before that version' do
+          result = registry.enabled(config, [])
+          expect(result).to include(RuboCop::Cop::Lint::BooleanSymbol)
+        end
+
+        it 'includes cops matching that version' do
+          result = registry.enabled(config, [])
+          expect(result).to include(RuboCop::Cop::Lint::DuplicateMethods)
+        end
+
+        it 'does not include cops matching that version' do
+          result = registry.enabled(config, [])
+          expect(result).not_to include(RuboCop::Cop::Metrics::MethodLength)
         end
       end
     end
