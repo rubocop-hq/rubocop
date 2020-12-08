@@ -6,6 +6,7 @@ module RuboCop
     # work to the specified cops.
     class Commissioner
       include RuboCop::AST::Traversal
+      using Base::Internals
 
       RESTRICTED_CALLBACKS = %i[on_send on_csend after_send after_csend].freeze
       private_constant :RESTRICTED_CALLBACKS

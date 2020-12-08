@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+using RuboCop::Cop::Base::Internals
 
 RSpec.describe RuboCop::Formatter::JUnitFormatter, :config do
   subject(:formatter) { described_class.new(output) }

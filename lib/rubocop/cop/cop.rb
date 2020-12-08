@@ -9,6 +9,8 @@ module RuboCop
     # Legacy scaffold for Cops.
     # See https://docs.rubocop.org/rubocop/cop_api_v1_changelog.html
     class Cop < Base
+      using Internals
+
       attr_reader :offenses
 
       exclude_from_registry

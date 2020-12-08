@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+using RuboCop::Cop::Base::Internals
+
 RSpec.describe RuboCop::Cop::Cop, :config do
   let(:source) { 'code = {some: :ruby}' }
   let(:location) { source_range(0...1) }
