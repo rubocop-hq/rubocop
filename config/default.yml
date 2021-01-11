@@ -3371,6 +3371,21 @@ Style/FrozenStringLiteralComment:
     - never
   SafeAutoCorrect: false
 
+Style/FrozenStringLiteralCommentCaseStyle:
+  Description: 'Use a consistent case style for the frozen string literal comment.'
+  Enabled: true
+  VersionAdded: '<<next>>'
+  EnforcedStyle: snake
+  SupportedStyles:
+    # `snake` will enforce the frozen string literal comment is written
+    # in snake case (words separated by underscores).
+    # Eg: froze_string_literal: true
+    - snake
+    # `kebab` will enforce the frozen string literal comment is written
+    # in kebab case (words separated by hyphens).
+    # Eg: froze-string-literal: true
+    - kebab
+
 Style/GlobalStdStream:
   Description: 'Enforces the use of `$stdout/$stderr/$stdin` instead of `STDOUT/STDERR/STDIN`.'
   StyleGuide: '#global-stdout'
