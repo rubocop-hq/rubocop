@@ -6,6 +6,11 @@ module RuboCop
       # This cop checks that the indentation method is consistent.
       # Either tabs only or spaces only are used for indentation.
       #
+      # The `IndentationWidth` attribute is ignored when `EnforcedStyle` is `tabs`.
+      #
+      # When `EnforcedStyle` is set to `tabs` it is recommended to also set
+      # `Layout/IndentationWidth`'s `Width` attribute to `1`.
+      #
       # @example EnforcedStyle: spaces (default)
       #   # bad
       #   # This example uses a tab to indent bar.
@@ -82,7 +87,7 @@ module RuboCop
         def autocorrect_lambda_for_spaces(range)
           lambda do |corrector|
             corrector.replace(range, range.source.gsub(/\A\s+/) do |match|
-              "\t" * (match.size / configured_indentation_width)
+              "\t" * match.size
             end)
           end
         end
