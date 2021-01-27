@@ -321,4 +321,16 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       end
     RUBY
   end
+
+  context 'with initializer before public_class_methods' do
+    it 'creates an offense' do
+      expect_offense <<~RUBY
+        class Person
+          def initialize; end
+          def self.some_method; end
+          ^^^^^^^^^^^^^^^^^^^^^^^^^ `public_class_methods` is supposed to appear before `initializer`.
+        end
+      RUBY
+    end
+  end
 end

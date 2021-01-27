@@ -139,7 +139,7 @@ module RuboCop
 
         HUMANIZED_NODE_TYPE = {
           casgn: :constants,
-          defs: :class_methods,
+          defs: :public_class_methods,
           def: :public_methods,
           sclass: :class_singleton
         }.freeze
