@@ -367,6 +367,31 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     end
   end
 
+  context 'when defs modifier is used' do
+    pending 'registers an offense for public class methods after private class methods' do
+      expect_offense(<<~RUBY)
+        class A
+          private_class_method def self.foo
+          end
+
+          public_class_method def self.bar
+          ^^^^^^^^^^^^^^ `public_class_methods` is supposed to appear before `private_class_methods`.
+          end
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class A
+          public_class_method def self.bar
+          end
+
+          private_class_method def self.foo
+          end
+        end
+      RUBY
+    end
+  end
+
   context 'initializer is private and comes after attribute macro' do
     it 'registers offense and auto-corrects' do
       expect_offense(<<~RUBY)
