@@ -190,9 +190,9 @@ module RuboCop
         #   by method name
         # @return String otherwise trying to {humanize_node} of the current node
         def classify(node)
+          node = node.send_node if node.block_type?
+
           case node.type
-          when :block
-            classify(node.send_node)
           when :send
             find_category(node)
           else
