@@ -237,7 +237,7 @@ module RuboCop
           if class_def.def_type? || class_def.send_type?
             [class_def]
           else
-            class_def.children.compact
+            class_def.children
           end
         end
 
