@@ -418,4 +418,26 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       RUBY
     end
   end
+
+  it 'does not get confused by single node bodies' do
+    expect_no_offenses(<<~RUBY)
+      class A
+        test&.private_methods(def foo; end)
+      end
+    RUBY
+  end
+
+  it 'does not get confused by kwbegin nodes' do
+    expect_offense(<<~RUBY)
+      class A
+        begin
+          begin
+            private def foo; end
+            public def bar; end
+            ^^^^^^^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_methods`.
+          end
+        end
+      end
+    RUBY
+  end
 end

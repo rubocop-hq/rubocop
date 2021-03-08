@@ -230,14 +230,13 @@ module RuboCop
         end
 
         def class_elements(class_node)
-          class_def = class_node.body
+          elems = [class_node.body].compact
 
-          return [] unless class_def
+          loop do
+            single = elems.first
+            return elems unless elems.size == 1 && (single.begin_type? || single.kwbegin_type?)
 
-          if class_def.def_type? || class_def.send_type?
-            [class_def]
-          else
-            class_def.children
+            elems = single.children
           end
         end
 
