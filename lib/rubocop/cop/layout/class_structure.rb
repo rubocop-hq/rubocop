@@ -138,10 +138,10 @@ module RuboCop
         extend AutoCorrector
 
         HUMANIZED_NODE_TYPE = {
-          casgn: :constants,
-          defs: :class_methods,
-          def: :public_methods,
-          sclass: :class_singleton
+          casgn: 'constants',
+          defs: 'class_methods',
+          def: 'public_methods',
+          sclass: 'class_singleton'
         }.freeze
 
         MSG = '`%<category>s` is supposed to appear before `%<previous>s`.'
@@ -197,7 +197,7 @@ module RuboCop
             find_category(node)
           else
             humanize_node(node)
-          end.to_s
+          end
         end
 
         # Categorize a node according to the {expected_order}
@@ -251,13 +251,14 @@ module RuboCop
           ignore?(sibling_class) || classification == sibling_class
         end
 
+        # @return [String]
         def humanize_node(node)
           if node.def_type?
-            return :initializer if node.method?(:initialize)
+            return 'initializer' if node.method?(:initialize)
 
             return "#{node_visibility(node)}_methods"
           end
-          HUMANIZED_NODE_TYPE[node.type] || node.type
+          HUMANIZED_NODE_TYPE[node.type] || node.type.to_s
         end
 
         def source_range_with_comment(node)
