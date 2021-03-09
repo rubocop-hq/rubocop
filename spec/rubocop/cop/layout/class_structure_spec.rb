@@ -119,31 +119,55 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
   end
 
   context 'with protected methods declared before private' do
-    let(:code) { <<-RUBY }
-      class MyClass
-        def public_method
+    it 'corrects it' do
+      expect_offense(<<~RUBY)
+        class MyClass
+          def public_method
+          end
+
+          private
+
+          def first_private_method
+          end
+
+          def second_private_method
+          end
+
+          protected
+
+          def first_protected_method
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
+          end
+
+          def second_protected_method
+          end
         end
+      RUBY
 
-        private
+      expect_correction(<<~RUBY) unless :pending
+        class MyClass
+          def public_method
+          end
 
-        def first_private_method
+          protected
+
+          def first_protected_method
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
+          end
+
+          def second_protected_method
+          end
+
+          private
+
+          def first_private_method
+          end
+
+          def second_private_method
+          end
         end
-
-        def second_private_method
-        end
-
-        protected
-
-        def first_protected_method
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
-        end
-
-        def second_protected_method
-        end
-      end
-    RUBY
-
-    it { expect_offense(code) }
+      RUBY
+    end
   end
 
   context 'with attribute macros before after validations' do
