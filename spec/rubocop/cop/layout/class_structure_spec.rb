@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Lint/LiteralAsCondition
 RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
   let(:config) do
     RuboCop::Config.new(
@@ -146,48 +147,34 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
   end
 
   context 'with attribute macros before after validations' do
-    let(:code) { <<-RUBY }
-      class Person
-        include AnotherModule
-        extend SomeModule
+    it 'corrects it' do
+      expect_offense(<<~RUBY)
+        class Person
+          include AnotherModule
+          extend SomeModule
 
-        CustomError = Class.new(StandardError)
+          CustomError = Class.new(StandardError)
 
-        validates :name
+          validates :name
 
-        attr_reader :name
-        ^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
-
-        def self.some_public_class_method
+          attr_reader :name
+          ^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
         end
+      RUBY
 
-        def initialize
+      expect_correction(<<~RUBY) unless :pending
+        class Person
+          include AnotherModule
+          extend SomeModule
+
+          CustomError = Class.new(StandardError)
+
+          attr_reader :name
+
+          validates :name
         end
-
-        def some_public_method
-        end
-
-        def other_public_method
-        end
-
-        private :other_public_method
-
-        def yet_other_public_method
-        end
-
-        protected
-
-        def some_protected_method
-        end
-
-        private
-
-        def some_private_method
-        end
-      end
-    RUBY
-
-    it { expect_offense(code) }
+      RUBY
+    end
   end
 
   context 'constant is not a literal' do
@@ -473,3 +460,4 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     RUBY
   end
 end
+# rubocop:enable Lint/LiteralAsCondition
