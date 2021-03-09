@@ -462,4 +462,14 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       end
     RUBY
   end
+
+  it 'considers singleton class too' do
+    expect_offense(<<~RUBY)
+      class << A
+        private def foo; end
+        public def bar; end
+        ^^^^^^^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_methods`.
+      end
+    RUBY
+  end
 end
