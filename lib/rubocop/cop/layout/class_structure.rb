@@ -192,12 +192,9 @@ module RuboCop
         def classify(node)
           node = node.send_node if node.block_type?
 
-          case node.type
-          when :send
-            find_category(node)
-          else
-            humanize_node(node)
-          end
+          return find_category(node) if node.send_type? && !node.receiver
+
+          humanize_node(node)
         end
 
         # Categorize a node according to the {expected_order}

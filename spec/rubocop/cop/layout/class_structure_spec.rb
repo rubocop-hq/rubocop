@@ -440,4 +440,15 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       end
     RUBY
   end
+
+  it 'does not get confused by non-macro calls' do
+    expect_no_offenses(<<~RUBY)
+      class A
+        def bar
+        end
+
+        singleton_class.attr_reader :foo
+      end
+    RUBY
+  end
 end
