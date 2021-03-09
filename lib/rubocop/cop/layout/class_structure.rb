@@ -183,17 +183,24 @@ module RuboCop
 
         # Classifies a node to match with something in the {expected_order}
         # @param node to be analysed
-        # @return String when the node type is a `:block` then
-        #   {classify} recursively with the first children
-        # @return String when the node type is a `:send` then {find_category}
-        #   by method name
-        # @return String otherwise trying to {humanize_node} of the current node
+        # @return String of the corresponding category
         def classify(node)
           node = node.send_node if node.block_type?
 
-          return find_category(node) if node.send_type? && !node.receiver
+          case node.type
+          when :send
+            classify_macro(node) unless node.receiver
+          when :def
+            classify_def(node)
+          else
+            humanize_node(node)
+          end
+        end
 
-          humanize_node(node)
+        def classify_def(node)
+          return 'initializer' if node.method?(:initialize)
+
+          "#{node_visibility(node)}_methods"
         end
 
         # Categorize a node according to the {expected_order}
@@ -201,7 +208,7 @@ module RuboCop
         # also its visibility.
         # @param node to be analysed.
         # @return [String] with the key category or the `method_name` as string
-        def find_category(node)
+        def classify_macro(node)
           name = node.method_name.to_s
           category, = categories.find { |_, names| names.include?(name) }
           key = category || name
@@ -249,11 +256,6 @@ module RuboCop
 
         # @return [String]
         def humanize_node(node)
-          if node.def_type?
-            return 'initializer' if node.method?(:initialize)
-
-            return "#{node_visibility(node)}_methods"
-          end
           HUMANIZED_NODE_TYPE[node.type] || node.type.to_s
         end
 
