@@ -189,19 +189,30 @@ module RuboCop
         def classify_all(class_node)
           @classification = {}
           class_elements(class_node).each do |node|
-            classification = classify(node)
-            @classification[node] = expected_order.index(classification)
+            classification = complete_classification(node, classify(node))
+            @classification[node] = classification
           end
+        end
+
+        def complete_classification(node, classification)
+          return classification unless (key = classification[:category])
+
+          visibility = classification[:visibility] || node_visibility(node)
+          visibility_key = "#{visibility}_#{key}"
+          classification[:group_order] =
+            expected_order.index(visibility_key) || expected_order.index(key)
+
+          classification
         end
 
         # @return [Integer | nil]
         def group_order(node)
-          @classification[node]
+          @classification[node][:group_order]
         end
 
         # Classifies a node to match with something in the {expected_order}
         # @param node to be analysed
-        # @return String of the corresponding category
+        # @return [Hash] with keys `category` and `visibility`
         def classify(node)
           node = node.send_node if node.block_type?
 
@@ -209,16 +220,16 @@ module RuboCop
           when :send
             classify_macro(node) unless node.receiver
           when :def
-            classify_def(node)
+            { category: classify_def(node) }
           else
-            humanize_node(node)
-          end
+            { category: humanize_node(node) }
+          end || {}
         end
 
         def classify_def(node)
           return 'initializer' if node.method?(:initialize)
 
-          "#{node_visibility(node)}_methods"
+          'methods'
         end
 
         # Categorize a node according to the {expected_order}
@@ -228,12 +239,10 @@ module RuboCop
         # @return [String] with the key category or the `method_name` as string
         def classify_macro(node)
           name = node.method_name.to_s
-          return "#{name}_methods" if node.def_modifier?
+          return { visibility: node.method_name, category: 'methods' } if node.def_modifier?
 
           category, = categories.find { |_, names| names.include?(name) }
-          key = category || name
-          visibility_key = "#{node_visibility(node)}_#{key}"
-          expected_order.include?(visibility_key) ? visibility_key : key
+          { category: category || name }
         end
 
         def class_elements(class_node)
