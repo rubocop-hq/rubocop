@@ -241,9 +241,7 @@ module RuboCop
         end
 
         def ignore?(classification)
-          classification.nil? ||
-            classification.to_s.end_with?('=') ||
-            expected_order.index(classification).nil?
+          expected_order.index(classification).nil?
         end
 
         def ignore_for_autocorrect?(node, sibling)
