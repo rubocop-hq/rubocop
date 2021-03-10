@@ -154,10 +154,12 @@ module RuboCop
         # Add offense when find a node out of expected order.
         def on_class(class_node)
           previous = -1
-          walk_over_nested_class_definition(class_node) do |node, category|
-            index = expected_order.index(category)
+          classify_all(class_node).each do |node|
+            next unless (index = group_order(node))
+
             if index < previous
-              message = format(MSG, category: category, previous: expected_order[previous])
+              message = format(MSG, category: expected_order[index],
+                                    previous: expected_order[previous])
               add_offense(node, message: message) { |corrector| autocorrect(corrector, node) }
             end
             previous = index
@@ -181,6 +183,20 @@ module RuboCop
 
           corrector.insert_before(previous_range, current_range.source)
           corrector.remove(current_range)
+        end
+
+        # @return [Array<Node>] class elements
+        def classify_all(class_node)
+          @classification = {}
+          class_elements(class_node).each do |node|
+            classification = classify(node)
+            @classification[node] = expected_order.index(classification)
+          end
+        end
+
+        # @return [Integer | nil]
+        def group_order(node)
+          @classification[node]
         end
 
         # Classifies a node to match with something in the {expected_order}
@@ -220,15 +236,6 @@ module RuboCop
           expected_order.include?(visibility_key) ? visibility_key : key
         end
 
-        def walk_over_nested_class_definition(class_node)
-          class_elements(class_node).each do |node|
-            classification = classify(node)
-            next if ignore?(classification)
-
-            yield node, classification
-          end
-        end
-
         def class_elements(class_node)
           elems = [class_node.body].compact
 
@@ -240,15 +247,11 @@ module RuboCop
           end
         end
 
-        def ignore?(classification)
-          expected_order.index(classification).nil?
-        end
-
         def ignore_for_autocorrect?(node, sibling)
-          classification = classify(node)
-          sibling_class = classify(sibling)
+          index = group_order(node)
+          sibling_index = group_order(sibling)
 
-          ignore?(sibling_class) || classification == sibling_class
+          sibling_index.nil? || index == sibling_index
         end
 
         # @return [String]
