@@ -241,7 +241,18 @@ module RuboCop
           name = node.method_name
           return { visibility: name, category: 'methods' } if node.def_modifier?
 
-          { category: macro_name_to_category(name) }
+          case name
+          when :public, :protected, :private
+            classify_visibility_macro(node)
+          end || { category: macro_name_to_category(name) }
+        end
+
+        def classify_visibility_macro(node)
+          args = node.arguments
+          arg, = args
+          return unless args.size == 1 && arg.send_type? && !arg.receiver
+
+          { visibility: node.method_name, category: macro_name_to_category(arg.method_name) }
         end
 
         def macro_name_to_category(name)

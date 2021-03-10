@@ -463,13 +463,24 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     RUBY
   end
 
-  pending 'handles categories visibility with inline style too' do
+  it 'handles categories visibility with inline style too' do
     expect_offense(<<~RUBY)
       class A
         private attr_accessor :foo
 
         attr_accessor :bar
         ^^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `private_attribute_macros`.
+      end
+    RUBY
+  end
+
+  it 'treats inline unknown macros as not recognized' do
+    expect_no_offenses(<<~RUBY)
+      class A
+        private something
+
+        def bar
+        end
       end
     RUBY
   end
