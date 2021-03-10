@@ -238,11 +238,16 @@ module RuboCop
         # @param node to be analysed.
         # @return [String] with the key category or the `method_name` as string
         def classify_macro(node)
-          name = node.method_name.to_s
-          return { visibility: node.method_name, category: 'methods' } if node.def_modifier?
+          name = node.method_name
+          return { visibility: name, category: 'methods' } if node.def_modifier?
 
+          { category: macro_name_to_category(name) }
+        end
+
+        def macro_name_to_category(name)
+          name = name.to_s
           category, = categories.find { |_, names| names.include?(name) }
-          { category: category || name }
+          category || name
         end
 
         def class_elements(class_node)
