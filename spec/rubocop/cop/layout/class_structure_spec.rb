@@ -16,6 +16,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           public_methods
           protected_attribute_macros
           protected_methods
+          private_constants
           private_attribute_macros
           private_delegate
           private_methods
@@ -253,6 +254,42 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
       end
     RUBY
+  end
+
+  context 'with private constants' do
+    context 'with private constants' do
+      it 'does not register an offense for unrecognized constants' do
+        expect_no_offenses(<<~RUBY)
+          class Foo
+            include Bar
+            private_constant :LIMIT # e.g. part of Foo
+
+            def name; end
+          end
+        RUBY
+      end
+    end
+
+    it 'registers an offense and corrects for literal private constants' do
+      expect_offense(<<~RUBY)
+        class Foo
+          LIMIT = 10
+          private_constant :LIMIT
+
+          def name; end
+          ^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_constants`.
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Foo
+          def name; end
+
+          LIMIT = 10
+          private_constant :LIMIT
+        end
+      RUBY
+    end
   end
 
   it 'registers an offense and corrects when str heredoc constant is defined after public method' do
