@@ -253,7 +253,7 @@ module RuboCop
 
         # @return [String]
         def humanize_node(node)
-          HUMANIZED_NODE_TYPE[node.type] || node.type.to_s
+          HUMANIZED_NODE_TYPE[node.type]
         end
 
         def source_range_with_comment(node)
