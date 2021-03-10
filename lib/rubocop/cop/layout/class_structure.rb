@@ -212,14 +212,11 @@ module RuboCop
         # @return [String] with the key category or the `method_name` as string
         def classify_macro(node)
           name = node.method_name.to_s
+          return "#{name}_methods" if node.def_modifier?
+
           category, = categories.find { |_, names| names.include?(name) }
           key = category || name
-          visibility_key =
-            if node.def_modifier?
-              "#{name}_methods"
-            else
-              "#{node_visibility(node)}_#{key}"
-            end
+          visibility_key = "#{node_visibility(node)}_#{key}"
           expected_order.include?(visibility_key) ? visibility_key : key
         end
 
