@@ -19,6 +19,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           private_constants
           private_attribute_macros
           private_delegate
+          private_class_methods
           private_methods
         ],
         'Categories' => {
@@ -416,14 +417,14 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
   end
 
   context 'when defs modifier is used' do
-    pending 'registers an offense for public class methods after private class methods' do
+    it 'registers an offense for public class methods after private class methods' do
       expect_offense(<<~RUBY)
         class A
           private_class_method def self.foo
           end
 
           public_class_method def self.bar
-          ^^^^^^^^^^^^^^ `public_class_methods` is supposed to appear before `private_class_methods`.
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `public_class_methods` is supposed to appear before `private_class_methods`.
           end
         end
       RUBY
