@@ -136,9 +136,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           end
 
           protected
+          ^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
 
           def first_protected_method
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
           end
 
           def second_protected_method
@@ -258,12 +258,12 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
   end
 
   context 'with private constants' do
-    context 'with private constants' do
+    context 'with unrecognized constants' do
       it 'does not register an offense for unrecognized constants' do
         expect_no_offenses(<<~RUBY)
           class Foo
             include Bar
-            private_constant :LIMIT # e.g. part of Foo
+            private_constant :LIMIT # e.g. part of Bar
 
             def name; end
           end
