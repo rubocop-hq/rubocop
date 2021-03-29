@@ -325,6 +325,40 @@ RSpec.describe RuboCop::Cop::Registry do
           expect(result).to include(RuboCop::Cop::Lint::BooleanSymbol)
         end
       end
+
+      context 'when specifying a version for NewCops in .rubocop.yml' do
+        let(:cops) do
+          [
+            RuboCop::Cop::Lint::EmptyBlock,
+            RuboCop::Cop::Lint::NoReturnInBeginEndBlocks,
+            RuboCop::Cop::Lint::EmptyBlock
+          ]
+        end
+
+        let(:config) do
+          RuboCop::Config.new(
+            'Lint' => { 'NewCops' => '1.2' },
+            'Lint/EmptyBlock' => { 'Enabled' => 'pending', 'VersionAdded' => '1.1' },
+            'Lint/NoReturnInBeginEndBlocks' => { 'Enabled' => 'pending', 'VersionAdded' => '1.2' },
+            'Lint/EmptyClass' => { 'Enabled' => 'pending', 'VersionAdded' => '1.3' }
+          )
+        end
+
+        it 'includes cops added before the specified version' do
+          result = registry.enabled(config, [])
+          expect(result).to include(RuboCop::Cop::Lint::EmptyBlock)
+        end
+
+        it 'includes cops added in the specified version' do
+          result = registry.enabled(config, [])
+          expect(result).to include(RuboCop::Cop::Lint::NoReturnInBeginEndBlocks)
+        end
+
+        it 'does not include cops added after the specified version' do
+          result = registry.enabled(config, [])
+          expect(result).not_to include(RuboCop::Cop::Lint::EmptyClass)
+        end
+      end
     end
   end
 

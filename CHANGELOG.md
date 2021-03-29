@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* [#8565](https://github.com/rubocop/rubocop/pull/8565): Add option to enable all new cops up to a given version of the plugin they came from. ([@zofrex][])
+
 ## 1.11.0 (2021-03-01)
 
 ### New features
@@ -5492,3 +5496,4 @@
 [@cteece]: https://github.com/cteece
 [@TSMMark]: https://github.com/TSMMark
 [@caalberts]: https://github.com/caalberts
+[@zofrex]: https://github.com/zofrex

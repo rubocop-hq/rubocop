@@ -417,6 +417,7 @@ RSpec.describe 'RuboCop::CLI options', :isolated_environment do # rubocop:disabl
         context 'when Style department is enabled' do
           let(:new_cops_option) { '' }
           let(:version_added) { "VersionAdded: '0.80'" }
+          let(:department_option) { '' }
 
           before do
             create_file('.rubocop.yml', <<~YAML)
@@ -425,6 +426,10 @@ RSpec.describe 'RuboCop::CLI options', :isolated_environment do # rubocop:disabl
               AllCops:
                 DefaultFormatter: progress
                 #{new_cops_option}
+
+              Style:
+                Enabled: true
+                #{department_option}
 
               Style/SomeCop:
                 Description: Something
@@ -447,6 +452,33 @@ RSpec.describe 'RuboCop::CLI options', :isolated_environment do # rubocop:disabl
               manual_url = output[remaining_range].split("\n").last
 
               expect(manual_url).to eq(versioning_manual_url)
+            end
+
+            context "when the department's NewCops option is a version > VersionAdded" do
+              let(:department_option) { "NewCops: '0.81'" }
+
+              it 'does not display a pending cop warning for that cop' do
+                expect(output).to start_with(pending_cop_warning)
+                expect(output).not_to include("Style/SomeCop: # (new in 0.80)\n  Enabled: true")
+              end
+            end
+
+            context "when the department's NewCops option is a version < VersionAdded" do
+              let(:department_option) { "NewCops: '0.79'" }
+
+              it 'does display a pending cop warning for that cop' do
+                expect(output).to start_with(pending_cop_warning)
+                expect(output).to include("Style/SomeCop: # (new in 0.80)\n  Enabled: true")
+              end
+            end
+
+            context "when the department's NewCops option is a version == VersionAdded" do
+              let(:department_option) { "NewCops: '0.80'" }
+
+              it 'does not display a pending cop warning for that cop' do
+                expect(output).to start_with(pending_cop_warning)
+                expect(output).not_to include("Style/SomeCop: # (new in 0.80)\n  Enabled: true")
+              end
             end
           end
 

@@ -106,6 +106,8 @@ AllCops:
   # the `--enable-pending-cops` command-line option.
   # When `NewCops` is `disable`, pending cops are disabled in bulk. Can be overridden by
   # the `--disable-pending-cops` command-line option.
+  # You can also set this to a version number per-department, e.g. `NewCops: 1.1` will
+  # enable all cops that were added in version 1.1 and earlier of the relevant plugin.
   NewCops: pending
   # Enables the result cache if `true`. Can be overridden by the `--cache` command
   # line option.

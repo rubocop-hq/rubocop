@@ -874,6 +874,72 @@ RSpec.describe RuboCop::Config do
     end
   end
 
+  context 'whether the cop is pending' do
+    context 'when the cop is pending' do
+      let(:hash) do
+        {
+          'Layout/TrailingWhitespace' => { 'Enabled' => 'pending' }
+        }
+      end
+
+      it 'is in the list of pending cops' do
+        expect(configuration.pending_cops).to \
+          include(have_attributes(name: 'Layout/TrailingWhitespace'))
+      end
+
+      context 'NewCops for the department is a version number' do
+        let(:new_cops_value) { '' }
+
+        let(:hash) do
+          {
+            'Layout' => { 'NewCops' => new_cops_value },
+            'Layout/TrailingWhitespace' => { 'Enabled' => 'pending', 'VersionAdded' => '0.80' }
+          }
+        end
+
+        context 'NewCops > VersionAdded' do
+          let(:new_cops_value) { '0.81' }
+
+          it 'is not in the list of pending cops' do
+            expect(configuration.pending_cops).not_to \
+              include(have_attributes(name: 'Layout/TrailingWhitespace'))
+          end
+        end
+
+        context 'NewCops == VersionAdded' do
+          let(:new_cops_value) { '0.80' }
+
+          it 'is not in the list of pending cops' do
+            expect(configuration.pending_cops).not_to \
+              include(have_attributes(name: 'Layout/TrailingWhitespace'))
+          end
+        end
+
+        context 'NewCops < VersionAdded' do
+          let(:new_cops_value) { '0.79' }
+
+          it 'is in the list of pending cops' do
+            expect(configuration.pending_cops).to \
+              include(have_attributes(name: 'Layout/TrailingWhitespace'))
+          end
+        end
+      end
+    end
+
+    context 'when the cop is not pending' do
+      let(:hash) do
+        {
+          'Layout/TrailingWhitespace' => { 'Enabled' => true }
+        }
+      end
+
+      it 'is not in the list of pending cops' do
+        expect(configuration.pending_cops).not_to \
+          include(have_attributes(name: 'Layout/TrailingWhitespace'))
+      end
+    end
+  end
+
   describe '#for_department', :restore_registry do
     let(:hash) do
       {

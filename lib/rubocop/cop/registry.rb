@@ -159,7 +159,7 @@ module RuboCop
         cfg = config.for_cop(cop)
 
         cop_enabled = cfg.fetch('Enabled') == true ||
-                      enabled_pending_cop?(cfg, config)
+                      enabled_pending_cop?(cfg, config, cop.cop_name)
 
         if only_safe
           cop_enabled && cfg.fetch('Safe', true)
@@ -168,11 +168,13 @@ module RuboCop
         end
       end
 
-      def enabled_pending_cop?(cop_cfg, config)
+      def enabled_pending_cop?(cop_cfg, config, cop_name)
         return false if @options[:disable_pending_cops]
 
-        cop_cfg.fetch('Enabled') == 'pending' &&
-          (@options[:enable_pending_cops] || config.enabled_new_cops?)
+        return false if cop_cfg.fetch('Enabled') != 'pending'
+
+        @options[:enable_pending_cops] || config.enabled_new_cops? \
+          || config.pending_cop_enabled_by_version?(cop_name, cop_cfg)
       end
 
       def names

@@ -82,6 +82,21 @@ AllCops:
 
 NOTE: The command-line options takes precedence over `.rubocop.yml` file.
 
+=== Enabling/Disabling Pending Cops by Version
+
+It is possible to enable all pending cops up to a given version of the plugin
+they come from. This makes it easy to enable cops in bulk, without risking CI
+breaking when future updates bring in newer cops.
+
+[source,yaml]
+----
+Lint:
+  NewCops: 1.2
+----
+
+This would enable all cops from the Lint department that were added in Rubocop
+version 1.2 or earlier, but not cops added in later versions.
+
 === Enabling/Disabling Individual Pending Cops
 
 Finally, you can enable/disable individual pending cops by setting their `Enabled` configuration to either `true` or `false` in your `.rubocop.yml` file:
