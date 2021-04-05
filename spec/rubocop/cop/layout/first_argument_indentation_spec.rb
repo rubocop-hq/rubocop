@@ -2,7 +2,10 @@
 
 RSpec.describe RuboCop::Cop::Layout::FirstArgumentIndentation, :config do
   let(:cop_config) do
-    { 'EnforcedStyle' => style }
+    {
+      'EnforcedStyle' => style,
+      'AllowMethodDefinitionArgument' => allow_method_definition_argument
+    }
   end
 
   let(:other_cops) do
@@ -12,6 +15,8 @@ RSpec.describe RuboCop::Cop::Layout::FirstArgumentIndentation, :config do
       }
     }
   end
+
+  let(:allow_method_definition_argument) { false }
 
   shared_examples 'common behavior' do
     context 'when IndentationWidth:Width is 2' do
@@ -341,6 +346,89 @@ RSpec.describe RuboCop::Cop::Layout::FirstArgumentIndentation, :config do
           run(
               :foo,
               bar: 3)
+        RUBY
+      end
+    end
+
+    context 'when `AllowMethodDefinitionArgument: false`' do
+      let(:allow_method_definition_argument) { false }
+
+      it 'registers and corrects an offense when the first argument is a method definition' do
+        expect_offense(<<~'RUBY')
+          memoize \
+          def do_something
+          ^^^^^^^^^^^^^^^^ Indent the first argument one step more than the start of the previous line.
+          end
+        RUBY
+
+        expect_correction(<<~'RUBY')
+          memoize \
+            def do_something
+            end
+        RUBY
+      end
+
+      it 'registers and corrects an offense when the first argument is a class method definition' do
+        expect_offense(<<~'RUBY')
+          memoize \
+          def self.do_something
+          ^^^^^^^^^^^^^^^^^^^^^ Indent the first argument one step more than the start of the previous line.
+          end
+        RUBY
+
+        expect_correction(<<~'RUBY')
+          memoize \
+            def self.do_something
+            end
+        RUBY
+      end
+
+      it 'registers and corrects an offense when the first argument is a class method definition and ' \
+         'wrapped in the method itself' do
+        expect_offense(<<~'RUBY')
+          memoize \
+          helper_method \
+          ^^^^^^^^^^^^^^^ Indent the first argument one step more than the start of the previous line.
+          def self.do_something
+          ^^^^^^^^^^^^^^^^^^^^^ Bad indentation of the first argument.
+          end
+        RUBY
+
+        expect_correction(<<~'RUBY')
+          memoize \
+            helper_method \
+              def self.do_something
+              end
+        RUBY
+      end
+    end
+
+    context 'when `AllowMethodDefinitionArgument: true`' do
+      let(:allow_method_definition_argument) { true }
+
+      it 'does not register an offense when the first argument is a method definition' do
+        expect_no_offenses(<<~'RUBY')
+          memoize \
+          def do_something
+          end
+        RUBY
+      end
+
+      it 'does not register an offense when the first argument is a class method definition' do
+        expect_no_offenses(<<~'RUBY')
+          memoize \
+          def self.do_something
+          end
+        RUBY
+      end
+
+      it 'does not register an offense when the first argument is a class method definition and ' \
+         'wrapped in the method itself' do
+        expect_no_offenses(<<~'RUBY')
+          memoize \
+          helper_method \
+          def self.do_something
+          end
         RUBY
       end
     end

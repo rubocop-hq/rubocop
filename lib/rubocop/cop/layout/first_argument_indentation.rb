@@ -144,6 +144,22 @@ module RuboCop
       #     nested_first_param),
       #   second_param
       #
+      # @example AllowMethodDefinitionArgument: false (default)
+      #   # bad
+      #   memoize \
+      #   def do_something
+      #   end
+      #
+      #   # good
+      #   memoize \
+      #     def do_something
+      #     end
+      #
+      # @example AllowMethodDefinitionArgument: true
+      #   # good
+      #   memoize \
+      #   def do_something
+      #   end
       class FirstArgumentIndentation < Base
         include Alignment
         include ConfigurableEnforcedStyle
@@ -155,6 +171,7 @@ module RuboCop
         def on_send(node)
           return if style != :consistent && enforce_first_argument_with_fixed_indentation?
           return if !node.arguments? || bare_operator?(node)
+          return if allow_method_definition_argument? && method_definition_argument?(node)
 
           indent = base_indentation(node) + configured_indentation_width
 
@@ -259,6 +276,20 @@ module RuboCop
 
         def on_new_investigation
           @comment_lines = nil
+        end
+
+        def allow_method_definition_argument?
+          cop_config.fetch('AllowMethodDefinitionArgument', false)
+        end
+
+        def method_definition_argument?(node)
+          first_argument = node.first_argument
+
+          if first_argument.send_type?
+            method_definition_argument?(first_argument)
+          else
+            first_argument.def_type? || first_argument.defs_type?
+          end
         end
 
         def enforce_first_argument_with_fixed_indentation?
