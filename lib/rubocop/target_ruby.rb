@@ -222,10 +222,6 @@ module RuboCop
       end
     end
 
-    def self.supported_versions
-      KNOWN_RUBIES
-    end
-
     SOURCES = [
       RuboCopConfig,
       RubyVersionFile,
@@ -236,6 +232,10 @@ module RuboCop
     ].freeze
 
     private_constant :SOURCES
+
+    def self.supported_versions
+      KNOWN_RUBIES
+    end
 
     def initialize(config)
       @config = config
