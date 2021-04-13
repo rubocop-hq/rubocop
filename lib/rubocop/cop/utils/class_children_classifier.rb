@@ -63,9 +63,10 @@ module RuboCop
           classification = classify(class_child_node)
           return unless classification
 
-          group = classification[:group] ||= :methods
           classification[:visibility] ||= \
-            if group == :methods
+            case classification[:group]
+            when nil then nil
+            when :methods
               add_categories(@cur_visibility, [classification])
               @cur_visibility[:visibility]
             else
@@ -116,7 +117,8 @@ module RuboCop
         def classify_generic_macro(node)
           method = node.method_name
           category = find_category(method)
-          result = { category: category, macro: :generic }
+          group = :methods if category
+          result = { category: category, macro: :generic, group: group }
           if (names = args_to_symbol_literals(node.arguments))
             case method
             when :attr_writer then names.map! { |n| :"#{n}:" }

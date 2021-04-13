@@ -129,6 +129,24 @@ RSpec.describe RuboCop::Cop::Utils::ClassChildrenClassifier do
       ]
     }
 
+    context 'for unrecognized macros' do
+      let(:fields) { %i[group macro category affects_categories] }
+
+      let(:body) { <<~RUBY }
+        def foo; end
+        some_macro
+        another_macro :foo
+      RUBY
+
+      it {
+        expect(values).to eq [
+          :methods, nil, nil, nil,
+          nil, :generic, nil, nil,
+          nil, :generic, nil, nil
+        ]
+      }
+    end
+
     context 'with mixed categories for post-macros' do
       let(:body) { <<~RUBY }
         attr_reader :foo
