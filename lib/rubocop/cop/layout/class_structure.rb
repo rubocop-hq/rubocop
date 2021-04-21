@@ -238,11 +238,31 @@ module RuboCop
             !ignore_for_autocorrect?(node, sibling)
           end
 
+          # We handle empty lines as follows:
+          # if `current` is preceeded with an empty line, remove it
+          # and add an empty line after `current`.
+          #
+          # This way:
+          #   <previous><current> => <current><previous>
+          #   <previous>\n<current> => <current>\n<previous>
+          #
+          # Of course, `current` and `previous` may not be adjacent,
+          # but this heuristic should provide adequate results.
           current_range = source_range_with_comment(node)
           previous_range = source_range_with_comment(previous)
 
+          if (empty_line = preceeding_empty_line(current_range))
+            corrector.remove(empty_line)
+            corrector.insert_before(previous_range, "\n")
+          end
           corrector.insert_before(previous_range, current_range.source)
           corrector.remove(current_range)
+        end
+
+        # @return [Range | nil]
+        def preceeding_empty_line(range)
+          prec = buffer.line_range(range.line - 1).adjust(end_pos: +1)
+          prec if prec.source.blank?
         end
 
         # @return [Integer | nil]
@@ -260,22 +280,15 @@ module RuboCop
         end
 
         def source_range_with_comment(node)
-          begin_pos, end_pos =
-            if node.def_type? && !node.method?(:initialize) || node.send_type? && node.def_modifier?
-              start_node = find_visibility_start(node) || node
-              end_node = find_visibility_end(node) || node
-              [begin_pos_with_comment(start_node),
-               end_position_for(end_node) + 1]
-            else
-              [begin_pos_with_comment(node), end_position_for(node)]
-            end
-
-          Parser::Source::Range.new(buffer, begin_pos, end_pos)
+          node.loc.expression.with(
+            begin_pos: begin_pos_with_comment(node),
+            end_pos: end_position_for(node) + 1
+          )
         end
 
         def end_position_for(node)
           heredoc = find_heredoc(node)
-          return heredoc.location.heredoc_end.end_pos + 1 if heredoc
+          return heredoc.location.heredoc_end.end_pos if heredoc
 
           end_line = buffer.line_for_position(node.loc.expression.end_pos)
           buffer.line_range(end_line).end_pos
@@ -293,7 +306,7 @@ module RuboCop
         end
 
         def start_line_position(node)
-          buffer.line_range(node.loc.line).begin_pos - 1
+          buffer.line_range(node.loc.line).begin_pos
         end
 
         def find_heredoc(node)

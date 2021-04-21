@@ -251,8 +251,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_correction(<<~RUBY)
       class Foo
         LIMIT = 10
-        def name; end
 
+        def name; end
       end
     RUBY
   end
@@ -461,8 +461,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           def initialize
           end
-          attr_accessor :foo
 
+          attr_accessor :foo
         end
       RUBY
     end
