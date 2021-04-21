@@ -169,10 +169,11 @@ module RuboCop
 
         # Autocorrect by swapping between two nodes autocorrecting them
         def autocorrect(corrector, node)
+          return if dynamic_constant?(node)
+
           previous = node.left_siblings.find do |sibling|
             !ignore_for_autocorrect?(node, sibling)
           end
-          return unless previous
 
           current_range = source_range_with_comment(node)
           previous_range = source_range_with_comment(previous)
@@ -250,7 +251,7 @@ module RuboCop
           classification = classify(node)
           sibling_class = classify(sibling)
 
-          ignore?(sibling_class) || classification == sibling_class || dynamic_constant?(node)
+          ignore?(sibling_class) || classification == sibling_class
         end
 
         def humanize_node(node)
