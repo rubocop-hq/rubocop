@@ -120,6 +120,29 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     end
   end
 
+  context 'with a class with an inline comment' do
+    it 'does not get confused' do
+      expect_offense <<~'RUBY'
+        class Foo # comment needed for this to fail!
+          def bar
+          end
+
+          attr_reader :foo
+          ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `public_methods`.
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Foo # comment needed for this to fail!
+          attr_reader :foo
+
+          def bar
+          end
+        end
+      RUBY
+    end
+  end
+
   context 'with protected methods declared before private' do
     it 'corrects it' do
       expect_offense(<<~RUBY)

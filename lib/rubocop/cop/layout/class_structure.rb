@@ -295,18 +295,11 @@ module RuboCop
         end
 
         def begin_pos_with_comment(node)
-          first_comment = nil
-          (node.first_line - 1).downto(1) do |annotation_line|
-            break unless (comment = processed_source.comment_at_line(annotation_line))
+          exclude_line = (node.first_line - 1).downto(1).find do |annotation_line|
+            !buffer.source_line(annotation_line).match?(/^\s*#/)
+          end || 0
 
-            first_comment = comment
-          end
-
-          start_line_position(first_comment || node)
-        end
-
-        def start_line_position(node)
-          buffer.line_range(node.loc.line).begin_pos
+          buffer.line_range(exclude_line + 1).begin_pos
         end
 
         def find_heredoc(node)
