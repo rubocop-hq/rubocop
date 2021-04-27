@@ -104,6 +104,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense <<~RUBY
         class Person
           CONST = 'wrong place'
+          CONST2 = 'wrong place2'
+          CONST3 = 'wrong place3'
           include AnotherModule
           ^^^^^^^^^^^^^^^^^^^^^ `module_inclusion` is supposed to appear before `constants`.
           extend SomeModule
@@ -115,6 +117,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           include AnotherModule
           extend SomeModule
           CONST = 'wrong place'
+          CONST2 = 'wrong place2'
+          CONST3 = 'wrong place3'
         end
       RUBY
     end
@@ -127,6 +131,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           def bar
           end
 
+          def baz
+          end
+
           attr_reader :foo
           ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `public_methods`.
         end
@@ -137,6 +144,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           attr_reader :foo
 
           def bar
+          end
+
+          def baz
           end
         end
       RUBY
@@ -156,6 +166,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           end
 
           def second_private_method
+          end
+
+          def third_private_method
           end
 
           protected
@@ -190,6 +203,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           def second_private_method
           end
+
+          def third_private_method
+          end
         end
       RUBY
     end
@@ -206,6 +222,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           validates :name
 
+          validates :address
+
           attr_reader :name
           ^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
         end
@@ -221,6 +239,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           attr_reader :name
 
           validates :name
+
+          validates :address
         end
       RUBY
     end
@@ -231,6 +251,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense <<~RUBY
         class Person
           def name; end
+          def address; end
 
           foo = 5
           LIMIT = foo + 1
@@ -247,6 +268,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       class Foo
         # This is a comment for macro method.
         validates :attr
+        validates :attr2
         attr_reader :foo
         ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
       end
@@ -257,6 +279,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         attr_reader :foo
         # This is a comment for macro method.
         validates :attr
+        validates :attr2
       end
     RUBY
   end
@@ -265,6 +288,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_offense(<<~RUBY)
       class Foo
         def name; end
+        def address; end
 
         LIMIT = 10
         ^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
@@ -276,6 +300,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         LIMIT = 10
 
         def name; end
+        def address; end
       end
     RUBY
   end
@@ -322,6 +347,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         def do_something
         end
 
+        def do_something_else
+        end
+
         CONSTANT = <<~EOS
         ^^^^^^^^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
           str
@@ -337,6 +365,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
         def do_something
         end
+
+        def do_something_else
+        end
       end
     RUBY
   end
@@ -347,9 +378,12 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         def do_something
         end
 
+        def do_something_else
+        end
+
         CONSTANT = <<~EOS
         ^^^^^^^^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
-          #{str}
+          #{2 + 2}
         EOS
       end
     RUBY
@@ -357,10 +391,13 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_correction(<<~'RUBY')
       class Foo
         CONSTANT = <<~EOS
-          #{str}
+          #{2 + 2}
         EOS
 
         def do_something
+        end
+
+        def do_something_else
         end
       end
     RUBY
@@ -370,6 +407,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_offense(<<~'RUBY')
       class Foo
         def do_something
+        end
+
+        def do_something_else
         end
 
         CONSTANT = <<~`EOS`
@@ -387,6 +427,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
         def do_something
         end
+
+        def do_something_else
+        end
       end
     RUBY
   end
@@ -396,6 +439,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense(<<~RUBY)
         class A
           private def foo
+          end
+
+          private def qux
           end
 
           public def bar
@@ -411,6 +457,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           private def foo
           end
+
+          private def qux
+          end
         end
       RUBY
     end
@@ -419,6 +468,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense(<<~RUBY)
         class A
           private def foo
+          end
+
+          private def qux
           end
 
           def bar
@@ -434,6 +486,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           private def foo
           end
+
+          private def qux
+          end
         end
       RUBY
     end
@@ -444,6 +499,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense(<<~RUBY)
         class A
           private_class_method def self.foo
+          end
+
+          private_class_method def self.qux
           end
 
           public_class_method def self.bar
@@ -459,6 +517,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           private_class_method def self.foo
           end
+
+          private_class_method def self.qux
+          end
         end
       RUBY
     end
@@ -471,6 +532,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           private
 
           attr_accessor :foo
+
+          attr_accessor :bar
 
           def initialize
           ^^^^^^^^^^^^^^ `initializer` is supposed to appear before `private_attribute_macros`.
@@ -486,6 +549,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           end
 
           attr_accessor :foo
+
+          attr_accessor :bar
         end
       RUBY
     end
@@ -505,6 +570,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         begin
           begin
             private def foo; end
+            private def qux; end
             public def bar; end
             ^^^^^^^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_methods`.
           end
@@ -529,6 +595,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       class A
         private attr_accessor :foo
 
+        private attr_accessor :qux
+
         attr_accessor :bar
         ^^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `private_attribute_macros`.
       end
@@ -550,6 +618,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_offense(<<~RUBY)
       class << A
         private def foo; end
+        private def qux; end
         public def bar; end
         ^^^^^^^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_methods`.
       end
