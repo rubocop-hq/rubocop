@@ -109,6 +109,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           include AnotherModule
           ^^^^^^^^^^^^^^^^^^^^^ `module_inclusion` is supposed to appear before `constants`.
           extend SomeModule
+          ^^^^^^^^^^^^^^^^^ `module_inclusion` is supposed to appear before `constants`.
         end
       RUBY
 
@@ -119,6 +120,33 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           CONST = 'wrong place'
           CONST2 = 'wrong place2'
           CONST3 = 'wrong place3'
+        end
+      RUBY
+    end
+  end
+
+  context 'simple example, moving down' do
+    specify do
+      expect_offense <<~RUBY
+        class Person
+          CONST = 'wrong place'
+          ^^^^^^^^^^^^^^^^^^^^^ `constants` is supposed to appear after `module_inclusion`.
+
+          include AnotherModule
+          extend SomeModule
+
+          private def foo; end
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Person
+          include AnotherModule
+          extend SomeModule
+
+          CONST = 'wrong place'
+
+          private def foo; end
         end
       RUBY
     end
@@ -175,9 +203,11 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           ^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
 
           def first_protected_method
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
           end
 
           def second_protected_method
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
           end
         end
       RUBY
@@ -278,6 +308,30 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       class Foo
         attr_reader :foo
         # This is a comment for macro method.
+        validates :attr
+        validates :attr2
+      end
+    RUBY
+  end
+
+  it 'reorders things, keeping the relative order intact' do
+    expect_offense(<<~RUBY)
+      class Foo
+        validates :name
+        validates :attr
+        attr_reader :foo
+        ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
+        validates :attr2
+        attr_reader :bar
+        ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
+      end
+    RUBY
+
+    expect_correction(<<~RUBY)
+      class Foo
+        attr_reader :foo
+        attr_reader :bar
+        validates :name
         validates :attr
         validates :attr2
       end

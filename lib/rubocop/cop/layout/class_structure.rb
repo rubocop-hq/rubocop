@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'diff-lcs'
+
 module RuboCop
   module Cop
     module Layout
@@ -137,7 +139,7 @@ module RuboCop
         include VisibilityHelp
         extend AutoCorrector
 
-        MSG = '`%<category>s` is supposed to appear before `%<previous>s`.'
+        MSG = '`%<category>s` is supposed to appear %<relation>s `%<other_category>s`.'
         DEFAULT_CATEGORIES = %i[methods class_methods constants class_singleton initializer].freeze
 
         def self.support_multiple_source?
@@ -158,16 +160,16 @@ module RuboCop
         # Validates code style on class declaration.
         # Add offense when find a node out of expected order.
         def on_class(class_node)
-          previous = -1
-          classify_all(class_node).each do |node|
-            next unless (index = group_order(node))
+          current = classify_all(class_node)
+          ordered = current.sort_by.with_index { |n, i| [group_order(n), i] }
+          return if current == ordered
 
-            if index < previous
-              message = format(MSG, category: expected_order[index],
-                                    previous: expected_order[previous])
-              add_offense(node, message: message) { |corrector| autocorrect(corrector, node) }
+          used_categories = ordered.map { |n| expected_order[group_order(n)] }.uniq
+
+          each_move(current, ordered) do |node, relation, pos|
+            add_offense(node, message: message(node, relation, used_categories)) do |corrector|
+              move_code(corrector, node, relation, pos)
             end
-            previous = index
           end
         end
 
@@ -204,6 +206,39 @@ module RuboCop
           end.compact
         end
 
+        def each_move(current, ordered) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+          removed = Set[]
+          previous = Hash.new { |_h, k| k }
+          changes = Diff::LCS.diff(current, ordered).flatten(1)
+
+          changes.each do |kind, index, node|
+            if kind == '-'
+              removed << node
+            else
+              relation = removed.include?(node) ? :after : :before
+              prev = previous[index] = previous[index - 1]
+              if prev == -1
+                pos = at(begin_pos_with_comment(current[0]))
+              else
+                pos = at(end_position_for(ordered[prev]))
+                pos = succeeding_empty_line(pos) || pos if relation == :before
+              end
+              yield node, relation, pos
+            end
+          end
+        end
+
+        def at(pos)
+          Parser::Source::Range.new(buffer, pos, pos)
+        end
+
+        def message(node, relation, used_categories)
+          category = expected_order[group_order(node)]
+          delta = relation == :before ? 1 : -1
+          other_category = used_categories[used_categories.index(category) + delta]
+          format(MSG, category: category, other_category: other_category, relation: relation)
+        end
+
         def complete_classification(_node, classification) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
           return unless classification
 
@@ -231,12 +266,8 @@ module RuboCop
         end
 
         # Autocorrect by swapping between two nodes autocorrecting them
-        def autocorrect(corrector, node)
+        def move_code(corrector, node, relation, position)
           return if dynamic_constant?(node)
-
-          previous = node.left_siblings.find do |sibling|
-            !ignore_for_autocorrect?(node, sibling)
-          end
 
           # We handle empty lines as follows:
           # if `current` is preceeded with an empty line, remove it
@@ -249,20 +280,30 @@ module RuboCop
           # Of course, `current` and `previous` may not be adjacent,
           # but this heuristic should provide adequate results.
           current_range = source_range_with_comment(node)
-          previous_range = source_range_with_comment(previous)
 
-          if (empty_line = preceeding_empty_line(current_range))
+          if relation == :after && (empty_line = succeeding_empty_line(current_range))
             corrector.remove(empty_line)
-            corrector.insert_before(previous_range, "\n")
+            corrector.insert_after(position, "\n")
           end
-          corrector.insert_before(previous_range, current_range.source)
+          corrector.insert_after(position, current_range.source)
           corrector.remove(current_range)
+          if relation == :before && (empty_line = preceeding_empty_line(current_range))
+            corrector.remove(empty_line)
+            corrector.insert_after(position, "\n")
+          end
+
+          nil
         end
 
         # @return [Range | nil]
         def preceeding_empty_line(range)
           prec = buffer.line_range(range.line - 1).adjust(end_pos: +1)
           prec if prec.source.blank?
+        end
+
+        def succeeding_empty_line(range)
+          succ = buffer.line_range(range.last_line).adjust(end_pos: +1)
+          succ if succ.source.blank?
         end
 
         # @return [Integer | nil]
@@ -282,16 +323,16 @@ module RuboCop
         def source_range_with_comment(node)
           node.loc.expression.with(
             begin_pos: begin_pos_with_comment(node),
-            end_pos: end_position_for(node) + 1
+            end_pos: end_position_for(node)
           )
         end
 
         def end_position_for(node)
           heredoc = find_heredoc(node)
-          return heredoc.location.heredoc_end.end_pos if heredoc
+          return heredoc.location.heredoc_end.end_pos + 1 if heredoc
 
           end_line = buffer.line_for_position(node.loc.expression.end_pos)
-          buffer.line_range(end_line).end_pos
+          buffer.line_range(end_line).end_pos + 1
         end
 
         def begin_pos_with_comment(node)
