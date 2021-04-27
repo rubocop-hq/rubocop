@@ -14,16 +14,6 @@ module RuboCop
 
       alias updated_source_file? updated_source_file
 
-      def initialize(cops, config = nil, options = {})
-        @cops = cops
-        @config = config
-        @options = options
-        reset
-        @ready = true
-
-        validate_config
-      end
-
       # @return [Team]
       def self.new(cop_or_classes, config, options = {})
         # Support v0 api:
@@ -46,6 +36,31 @@ module RuboCop
         cop_classes.enabled(config, only, only_safe: safe).map do |cop_class|
           cop_class.new(config, options)
         end
+      end
+
+      # @return [Array<Force>] needed for the given cops
+      def self.forces_for(cops)
+        needed = Hash.new { |h, k| h[k] = [] }
+        cops.each do |cop|
+          forces = cop.class.joining_forces
+          if forces.is_a?(Array)
+            forces.each { |force| needed[force] << cop }
+          elsif forces
+            needed[forces] << cop
+          end
+        end
+
+        needed.map { |force_class, joining_cops| force_class.new(joining_cops) }
+      end
+
+      def initialize(cops, config = nil, options = {})
+        @cops = cops
+        @config = config
+        @options = options
+        reset
+        @ready = true
+
+        validate_config
       end
 
       def autocorrect?
@@ -93,21 +108,6 @@ module RuboCop
       # @deprecated
       def forces
         @forces ||= self.class.forces_for(cops)
-      end
-
-      # @return [Array<Force>] needed for the given cops
-      def self.forces_for(cops)
-        needed = Hash.new { |h, k| h[k] = [] }
-        cops.each do |cop|
-          forces = cop.class.joining_forces
-          if forces.is_a?(Array)
-            forces.each { |force| needed[force] << cop }
-          elsif forces
-            needed[forces] << cop
-          end
-        end
-
-        needed.map { |force_class, joining_cops| force_class.new(joining_cops) }
       end
 
       def external_dependency_checksum

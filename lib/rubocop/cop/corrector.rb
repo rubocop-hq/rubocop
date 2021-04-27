@@ -11,6 +11,20 @@ module RuboCop
     class Corrector < ::Parser::Source::TreeRewriter
       NOOP_CONSUMER = ->(diagnostic) {} # noop
 
+      # Duck typing for get to a ::Parser::Source::Buffer
+      def self.source_buffer(source)
+        source = source.processed_source if source.respond_to?(:processed_source)
+        source = source.buffer if source.respond_to?(:buffer)
+        source = source.source_buffer if source.respond_to?(:source_buffer)
+
+        unless source.is_a? ::Parser::Source::Buffer
+          raise TypeError, 'Expected argument to lead to a Parser::Source::Buffer ' \
+                           "but got #{source.inspect}"
+        end
+
+        source
+      end
+
       # @param source [Parser::Source::Buffer, or anything
       #                leading to one via `(processed_source.)buffer`]
       #
@@ -62,20 +76,6 @@ module RuboCop
         range = to_range(node_or_range)
         to_remove = range.with(begin_pos: range.end_pos - size)
         remove(to_remove)
-      end
-
-      # Duck typing for get to a ::Parser::Source::Buffer
-      def self.source_buffer(source)
-        source = source.processed_source if source.respond_to?(:processed_source)
-        source = source.buffer if source.respond_to?(:buffer)
-        source = source.source_buffer if source.respond_to?(:source_buffer)
-
-        unless source.is_a? ::Parser::Source::Buffer
-          raise TypeError, 'Expected argument to lead to a Parser::Source::Buffer ' \
-                           "but got #{source.inspect}"
-        end
-
-        source
       end
 
       private

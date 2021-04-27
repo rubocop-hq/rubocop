@@ -21,6 +21,13 @@ module RuboCop
     DEFAULT_RAILS_VERSION = 5.0
     attr_reader :loaded_path
 
+    def self.create(hash, path, check: true)
+      config = new(hash, path)
+      config.check if check
+
+      config
+    end
+
     def initialize(hash = {}, loaded_path = nil)
       @loaded_path = loaded_path
       @for_cop = Hash.new do |h, cop|
@@ -31,13 +38,6 @@ module RuboCop
       end
       @hash = hash
       @validator = ConfigValidator.new(self)
-    end
-
-    def self.create(hash, path, check: true)
-      config = new(hash, path)
-      config.check if check
-
-      config
     end
 
     def loaded_features
