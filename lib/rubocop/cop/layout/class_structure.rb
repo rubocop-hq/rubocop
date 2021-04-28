@@ -142,6 +142,9 @@ module RuboCop
         MSG = '`%<category>s` is supposed to appear %<relation>s `%<other_category>s`.'
         DEFAULT_CATEGORIES = %i[methods class_methods constants class_singleton initializer].freeze
 
+        ATTRIBUTES = %i[attr_accessor attr_reader attr_writer attr].to_set.freeze
+        private_constant :ATTRIBUTES
+
         def self.support_multiple_source?
           true
         end
@@ -150,6 +153,11 @@ module RuboCop
           super
           @classifer = Utils::ClassChildrenClassifier.new(all_symbolized_categories)
           @expected_order_index = expected_order.map.with_index.to_h.transform_keys(&:to_sym)
+          @remap_initializer = if @expected_order_index.key?(:initializer)
+                                 :do_not_remap
+                               else
+                                 :initializer
+                               end
         end
 
         # @!method dynamic_expression?(node)
@@ -192,6 +200,7 @@ module RuboCop
 
         def all_symbolized_categories
           @all_symbolized_categories ||= {
+            **default_attribute_category,
             **ungrouped_categories.map { |categ| [categ, [categ]] }.to_h,
             **symbolized_categories
           }
@@ -210,6 +219,19 @@ module RuboCop
           @symbolized_categories ||= categories.map do |key, values|
             [key.to_sym, values.map(&:to_sym)]
           end.to_h
+        end
+
+        def default_attribute_category
+          missing = missing_attributes
+          return {} if missing.empty?
+
+          { methods: missing }
+        end
+
+        # @return [Array<Symbol>] the attribute methods that are not present in the config
+        def missing_attributes
+          missing = ATTRIBUTES - ungrouped_categories
+          symbolized_categories.values.inject(missing, :-)
         end
 
         def classify_all(class_node)
@@ -257,6 +279,7 @@ module RuboCop
 
           affects = classification[:affects_categories] || []
           categ = classification[:category]
+          categ = :methods if categ == @remap_initializer
           # post macros without a particular category and
           # refering only to unknowns are ignored
           # (e.g. `private :some_unknown_method`)

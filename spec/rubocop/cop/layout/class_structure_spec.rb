@@ -677,6 +677,47 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     RUBY
   end
 
+  context 'with a minimal config' do
+    let(:config) do
+      RuboCop::Config.new(
+        'Layout/ClassStructure' => {
+          'ExpectedOrder' => %w[
+            constants
+            methods
+            class_methods
+          ]
+        }
+      )
+    end
+
+    it 'uses "methods" as default for attribute methods' do
+      expect_offense(<<~RUBY)
+        class Example
+          attr_reader :foo
+          ^^^^^^^^^^^^^^^^ `methods` is supposed to appear after `constants`.
+          protected attr_writer :bar
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `methods` is supposed to appear after `constants`.
+          FOO = 42
+          BAR = 42
+          BAZ = 42
+        end
+      RUBY
+    end
+
+    it 'uses "methods" as default for initializer' do
+      expect_offense(<<~RUBY)
+        class Example
+          def initialize
+          ^^^^^^^^^^^^^^ `methods` is supposed to appear after `constants`.
+          end
+          FOO = 42
+          BAR = 42
+          BAZ = 42
+        end
+      RUBY
+    end
+  end
+
   # rubocop:disable RSpec/PredicateMatcher
   describe '#dynamic_expression?' do
     RSpec::Matchers.define :be_dynamic do
