@@ -4,7 +4,6 @@ require 'pathname'
 
 # FIXME: Moving Rails department code to RuboCop Rails will remove
 # the following rubocop:disable comment.
-# rubocop:disable Metrics/ClassLength
 module RuboCop
   # This class represents the configuration of the RuboCop application
   # and all its cops. A Config is associated with a YAML configuration
@@ -290,4 +289,3 @@ module RuboCop
     end
   end
 end
-# rubocop:enable Metrics/ClassLength
