@@ -41,8 +41,6 @@ module RuboCop
         @global = new
       end
 
-      attr_reader :options
-
       def initialize(cops = [], options = {})
         @registry = {}
         @departments = {}
@@ -51,6 +49,8 @@ module RuboCop
         @enrollment_queue = cops
         @options = options
       end
+
+      attr_reader :options
 
       def enlist(cop)
         @enrollment_queue << cop

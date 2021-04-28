@@ -8,10 +8,6 @@ module RuboCop
       class Variable
         VARIABLE_DECLARATION_TYPES = (VARIABLE_ASSIGNMENT_TYPES + ARGUMENT_DECLARATION_TYPES).freeze
 
-        attr_reader :name, :declaration_node, :scope, :assignments, :references, :captured_by_block
-
-        alias captured_by_block? captured_by_block
-
         def initialize(name, declaration_node, scope)
           unless VARIABLE_DECLARATION_TYPES.include?(declaration_node.type)
             raise ArgumentError,
@@ -27,6 +23,10 @@ module RuboCop
           @references = []
           @captured_by_block = false
         end
+
+        attr_reader :name, :declaration_node, :scope, :assignments, :references, :captured_by_block
+
+        alias captured_by_block? captured_by_block
 
         def assign(node)
           @assignments << Assignment.new(node, self)

@@ -4,8 +4,6 @@ module RuboCop
   module Cop
     # Common functionality for handling percent literal delimiters.
     class PreferredDelimiters
-      attr_reader :type, :config
-
       PERCENT_LITERAL_TYPES = %w[% %i %I %q %Q %r %s %w %W %x].freeze
 
       def initialize(type, config, preferred_delimiters)
@@ -13,6 +11,8 @@ module RuboCop
         @config = config
         @preferred_delimiters = preferred_delimiters
       end
+
+      attr_reader :type, :config
 
       def delimiters
         preferred_delimiters[type].chars

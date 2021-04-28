@@ -6,14 +6,14 @@ module RuboCop
     # a previously defined cop.
     # @api private
     class RemovedCop < CopRule
-      attr_reader :old_name, :metadata
-
       BASE_MESSAGE = 'The `%<old_name>s` cop has been removed'
 
       def initialize(config, old_name, metadata)
         super(config, old_name)
         @metadata = metadata.is_a?(Hash) ? metadata : {}
       end
+
+      attr_reader :old_name, :metadata
 
       def rule_message
         base = format(BASE_MESSAGE, old_name: old_name)

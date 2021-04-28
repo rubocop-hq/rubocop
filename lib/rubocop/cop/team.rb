@@ -10,10 +10,6 @@ module RuboCop
     # first the ones needed for autocorrection (if any), then the rest
     # (unless autocorrections happened).
     class Team
-      attr_reader :errors, :warnings, :updated_source_file, :cops
-
-      alias updated_source_file? updated_source_file
-
       # @return [Team]
       def self.new(cop_or_classes, config, options = {})
         # Support v0 api:
@@ -62,6 +58,10 @@ module RuboCop
 
         validate_config
       end
+
+      attr_reader :errors, :warnings, :updated_source_file, :cops
+
+      alias updated_source_file? updated_source_file
 
       def autocorrect?
         @options[:auto_correct]

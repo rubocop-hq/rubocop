@@ -9,8 +9,6 @@ module RuboCop
     # https://github.com/go-labs/rspec_pacman_formatter
     class PacmanFormatter < ClangStyleFormatter
       include TextUtil
-      attr_accessor :progress_line
-
       FALLBACK_TERMINAL_WIDTH = 80
       GHOST = 'ᗣ'
       PACMAN = Rainbow('ᗧ').yellow.bright
@@ -22,6 +20,8 @@ module RuboCop
         @total_files   = 0
         @repetitions   = 0
       end
+
+      attr_accessor :progress_line
 
       def started(target_files)
         super

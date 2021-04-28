@@ -6,11 +6,11 @@ module RuboCop
   class CommentConfig
     CopAnalysis = Struct.new(:line_ranges, :start_line_number)
 
-    attr_reader :processed_source
-
     def initialize(processed_source)
       @processed_source = processed_source
     end
+
+    attr_reader :processed_source
 
     def cop_enabled_at_line?(cop, line_number)
       cop = cop.cop_name if cop.respond_to?(:cop_name)

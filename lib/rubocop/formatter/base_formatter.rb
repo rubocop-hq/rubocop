@@ -41,6 +41,15 @@ module RuboCop
     class BaseFormatter
       # @api public
       #
+      # @param output [IO]
+      #   `$stdout` or opened file
+      def initialize(output, options = {})
+        @output = output
+        @options = options
+      end
+
+      # @api public
+      #
       # @!attribute [r] output
       #
       # @return [IO]
@@ -55,15 +64,6 @@ module RuboCop
       #
       # @return [Hash]
       attr_reader :options
-
-      # @api public
-      #
-      # @param output [IO]
-      #   `$stdout` or opened file
-      def initialize(output, options = {})
-        @output = output
-        @options = options
-      end
 
       # @api public
       #

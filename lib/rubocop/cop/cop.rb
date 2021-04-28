@@ -9,8 +9,6 @@ module RuboCop
     # Legacy scaffold for Cops.
     # See https://docs.rubocop.org/rubocop/cop_api_v1_changelog.html
     class Cop < Base
-      attr_reader :offenses
-
       exclude_from_registry
 
       # @deprecated
@@ -47,6 +45,8 @@ module RuboCop
       def self.qualified_cop_name(name, origin)
         Registry.qualified_cop_name(name, origin)
       end
+
+      attr_reader :offenses
 
       def add_offense(node_or_range, location: :expression, message: nil, severity: nil, &block)
         @v0_argument = node_or_range

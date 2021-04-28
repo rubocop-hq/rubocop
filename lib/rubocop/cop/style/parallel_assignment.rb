@@ -179,13 +179,13 @@ module RuboCop
         class GenericCorrector
           include Alignment
 
-          attr_reader :config, :node
-
           def initialize(node, config, new_elements)
             @node = node
             @config = config
             @new_elements = new_elements
           end
+
+          attr_reader :config, :node
 
           def correction
             assignment.join("\n#{offset(node)}")

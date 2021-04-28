@@ -9,6 +9,37 @@ module RuboCop
       # @api private
       COMPARISON_ATTRIBUTES = %i[line column cop_name message severity].freeze
 
+      PseudoSourceRange = Struct.new(:line, :column, :source_line, :begin_pos,
+                                     :end_pos) do
+        alias_method :first_line, :line
+        alias_method :last_line, :line
+        alias_method :last_column, :column
+
+        def column_range
+          column...last_column
+        end
+
+        def size
+          end_pos - begin_pos
+        end
+        alias_method :length, :size
+      end
+      private_constant :PseudoSourceRange
+
+      NO_LOCATION = PseudoSourceRange.new(1, 0, '', 0, 0).freeze
+
+      # @api private
+      def initialize(severity, location, message, cop_name, # rubocop:disable Metrics/ParameterLists
+                     status = :uncorrected, corrector = nil)
+        @severity = RuboCop::Cop::Severity.new(severity)
+        @location = location
+        @message = message.freeze
+        @cop_name = cop_name.freeze
+        @status = status
+        @corrector = corrector
+        freeze
+      end
+
       # @api public
       #
       # @!attribute [r] severity
@@ -60,37 +91,6 @@ module RuboCop
       # @return [Corrector | nil]
       #   the autocorrection for this offense, or `nil` when not available
       attr_reader :corrector
-
-      PseudoSourceRange = Struct.new(:line, :column, :source_line, :begin_pos,
-                                     :end_pos) do
-        alias_method :first_line, :line
-        alias_method :last_line, :line
-        alias_method :last_column, :column
-
-        def column_range
-          column...last_column
-        end
-
-        def size
-          end_pos - begin_pos
-        end
-        alias_method :length, :size
-      end
-      private_constant :PseudoSourceRange
-
-      NO_LOCATION = PseudoSourceRange.new(1, 0, '', 0, 0).freeze
-
-      # @api private
-      def initialize(severity, location, message, cop_name, # rubocop:disable Metrics/ParameterLists
-                     status = :uncorrected, corrector = nil)
-        @severity = RuboCop::Cop::Severity.new(severity)
-        @location = location
-        @message = message.freeze
-        @cop_name = cop_name.freeze
-        @status = status
-        @corrector = corrector
-        freeze
-      end
 
       # @api public
       #

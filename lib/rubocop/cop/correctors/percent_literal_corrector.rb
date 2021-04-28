@@ -6,12 +6,12 @@ module RuboCop
     class PercentLiteralCorrector
       include Util
 
-      attr_reader :config, :preferred_delimiters
-
       def initialize(config, preferred_delimiters)
         @config = config
         @preferred_delimiters = preferred_delimiters
       end
+
+      attr_reader :config, :preferred_delimiters
 
       def correct(corrector, node, char)
         escape = escape_words?(node)

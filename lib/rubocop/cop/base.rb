@@ -40,8 +40,6 @@ module RuboCop
       include IgnoredNode
       include AutocorrectLogic
 
-      attr_reader :config, :processed_source
-
       # Reports of an investigation.
       # Immutable
       # Consider creation API private
@@ -137,6 +135,8 @@ module RuboCop
         @options = options || { debug: false }
         reset_investigation
       end
+
+      attr_reader :config, :processed_source
 
       # Called before all on_... have been called
       # When refining this method, always call `super`

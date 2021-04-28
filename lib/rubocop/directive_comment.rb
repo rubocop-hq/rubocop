@@ -23,12 +23,12 @@ module RuboCop
       line.split(DIRECTIVE_COMMENT_REGEXP).first
     end
 
-    attr_reader :comment, :mode, :cops
-
     def initialize(comment)
       @comment = comment
       @mode, @cops = match_captures
     end
+
+    attr_reader :comment, :mode, :cops
 
     # Checks if this directive relates to single line
     def single_line?

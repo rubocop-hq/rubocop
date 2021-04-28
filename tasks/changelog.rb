@@ -91,14 +91,14 @@ class Changelog
     entry_paths.to_h { |path| [path, File.read(path)] }
   end
 
-  attr_reader :header, :rest
-
   def initialize(content: File.read(PATH), entries: Changelog.read_entries)
     require 'strscan'
 
     parse(content)
     @entries = entries
   end
+
+  attr_reader :header, :rest
 
   def and_delete!
     @entries.each_key { |path| File.delete(path) }

@@ -15,12 +15,12 @@ module RuboCop
     # A place where information about a target ruby version is found.
     # @api private
     class Source
-      attr_reader :version, :name
-
       def initialize(config)
         @config = config
         @version = find_version
       end
+
+      attr_reader :version, :name
 
       def to_s
         name

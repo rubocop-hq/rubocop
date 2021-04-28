@@ -18,8 +18,6 @@ module RuboCop
     CopConfig = Struct.new(:name, :metadata)
 
     DEFAULT_RAILS_VERSION = 5.0
-    attr_reader :loaded_path
-
     def self.create(hash, path, check: true)
       config = new(hash, path)
       config.check if check
@@ -38,6 +36,8 @@ module RuboCop
       @hash = hash
       @validator = ConfigValidator.new(self)
     end
+
+    attr_reader :loaded_path
 
     def loaded_features
       @loaded_features ||= ConfigLoader.loaded_features

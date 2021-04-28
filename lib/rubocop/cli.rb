@@ -11,12 +11,12 @@ module RuboCop
 
     class Finished < RuntimeError; end
 
-    attr_reader :options, :config_store
-
     def initialize
       @options = {}
       @config_store = ConfigStore.new
     end
+
+    attr_reader :options, :config_store
 
     # @api public
     #

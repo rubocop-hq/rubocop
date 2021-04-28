@@ -5,14 +5,14 @@ module RuboCop
     # Base class for ConfigObsoletion rules relating to parameters
     # @api private
     class ParameterRule < Rule
-      attr_reader :cop, :parameter, :metadata
-
       def initialize(config, cop, parameter, metadata)
         super(config)
         @cop = cop
         @parameter = parameter
         @metadata = metadata
       end
+
+      attr_reader :cop, :parameter, :metadata
 
       def parameter_rule?
         true

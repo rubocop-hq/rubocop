@@ -6,12 +6,12 @@ module RuboCop
     # functionality into multiple new cops.
     # @api private
     class SplitCop < CopRule
-      attr_reader :metadata
-
       def initialize(config, old_name, metadata)
         super(config, old_name)
         @metadata = metadata
       end
+
+      attr_reader :metadata
 
       def rule_message
         "The `#{old_name}` cop has been split into #{to_sentence(alternatives)}."

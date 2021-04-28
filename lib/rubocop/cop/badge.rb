@@ -10,8 +10,6 @@ module RuboCop
     # allow for badge references in source files that omit the department for
     # RuboCop to infer.
     class Badge
-      attr_reader :department, :cop_name
-
       def self.for(class_name)
         parts = class_name.split('::')
         name_deep_enough = parts.length >= 4
@@ -27,6 +25,8 @@ module RuboCop
         @department = (department_parts.join('/').to_sym unless department_parts.empty?)
         @cop_name = class_name_parts.last
       end
+
+      attr_reader :department, :cop_name
 
       def ==(other)
         hash == other.hash
