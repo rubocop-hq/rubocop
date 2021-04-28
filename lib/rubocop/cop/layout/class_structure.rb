@@ -152,9 +152,22 @@ module RuboCop
           @expected_order_index = expected_order.map.with_index.to_h.transform_keys(&:to_sym)
         end
 
+        # @!method dynamic_expression?(node)
+        def_node_matcher :dynamic_expression?, <<~PATTERN
+          `{
+            (send {nil? self} ...)   # potential class method call
+            lvar                    # local variable
+            (const {nil? self} !{    # potentially local constant
+              :Set :Struct :Class   # but exclude known ones
+              :Module :Regexp :Dir :Ractor
+              :String :Hash :Array
+            })
+          }
+        PATTERN
+
         # @!method dynamic_constant?(node)
         def_node_matcher :dynamic_constant?, <<~PATTERN
-          (casgn nil? _ (send ...))
+          (casgn nil? _ #dynamic_expression?)
         PATTERN
 
         # Validates code style on class declaration.

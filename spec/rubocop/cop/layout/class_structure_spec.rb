@@ -676,4 +676,25 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       end
     RUBY
   end
+
+  # rubocop:disable RSpec/PredicateMatcher
+  describe '#dynamic_expression?' do
+    RSpec::Matchers.define :be_dynamic do
+      match do |actual|
+        ast = parse_source(actual).ast
+        cop.dynamic_expression?(ast)
+      end
+    end
+
+    it { expect('local = 42; [local]').to be_dynamic }
+    it { expect('Foo').to be_dynamic }
+    it { expect('foo').to be_dynamic }
+    it { expect('self.foo').to be_dynamic }
+    it { expect('[1, 2, [3, 4, [foo]]]').to be_dynamic }
+
+    it { expect('Set[1, 2, 3].freeze').not_to be_dynamic }
+    it { expect('Struct.new(:x, :y) {}').not_to be_dynamic }
+    it { expect('1 + 1 > 2 ? %w[a b c] : %w[d e f]').not_to be_dynamic }
+  end
+  # rubocop:enable RSpec/PredicateMatcher
 end
