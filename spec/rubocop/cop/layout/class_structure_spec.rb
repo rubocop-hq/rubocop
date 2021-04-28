@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable Lint/LiteralAsCondition
 RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
   let(:config) do
     RuboCop::Config.new(
@@ -212,7 +211,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         end
       RUBY
 
-      expect_correction(<<~RUBY) unless :pending
+      expect_correction(<<~RUBY)
         class MyClass
           def public_method
           end
@@ -220,7 +219,6 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           protected
 
           def first_protected_method
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
           end
 
           def second_protected_method
@@ -259,7 +257,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         end
       RUBY
 
-      expect_correction(<<~RUBY) unless :pending
+      expect_correction(<<~RUBY)
         class Person
           include AnotherModule
           extend SomeModule
@@ -679,4 +677,3 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     RUBY
   end
 end
-# rubocop:enable Lint/LiteralAsCondition
