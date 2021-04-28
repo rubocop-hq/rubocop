@@ -274,7 +274,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     end
   end
 
-  context 'constant is not a literal' do
+  context 'dynamic constant' do
     it 'registers offense but does not autocorrect' do
       expect_offense <<~RUBY
         class Person
@@ -284,6 +284,25 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           foo = 5
           LIMIT = foo + 1
           ^^^^^^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
+        end
+      RUBY
+
+      expect_no_corrections
+    end
+
+    it 'registers offense but does not autocorrect private_constant' do
+      expect_offense <<~RUBY
+        class Person
+          private
+          def name; end
+          def address; end
+          def email; end
+
+          foo = 5
+          LIMIT = foo + 1
+          ^^^^^^^^^^^^^^^ `private_constants` is supposed to appear before `private_methods`.
+          private_constant :LIMIT
+          ^^^^^^^^^^^^^^^^^^^^^^^ `private_constants` is supposed to appear before `private_methods`.
         end
       RUBY
 

@@ -173,9 +173,9 @@ module RuboCop
           }
         PATTERN
 
-        # @!method dynamic_constant?(node)
-        def_node_matcher :dynamic_constant?, <<~PATTERN
-          (casgn nil? _ #dynamic_expression?)
+        # @!method dynamic_constant(node)
+        def_node_matcher :dynamic_constant, <<~PATTERN
+          (casgn nil? $_ #dynamic_expression?)
         PATTERN
 
         # Validates code style on class declaration.
@@ -235,10 +235,20 @@ module RuboCop
         end
 
         def classify_all(class_node)
+          @dynamic_constants = nil
           @classification = @classifer.classify_children(class_node)
           @classification.map do |node, classification|
             node if complete_classification(node, classification)
           end.compact
+        end
+
+        def dynamic_constants
+          @dynamic_constants ||= @classification.keys.map { |node| dynamic_constant node }.compact
+        end
+
+        def dynamic_constant?(node)
+          c = @classification[node]
+          c[:group] == :constants && c[:names].any? { |name| dynamic_constants.include?(name) }
         end
 
         def each_move(current, ordered) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
