@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'diff-lcs'
+
 module RuboCop
   module Cop
     module Layout
@@ -137,143 +139,238 @@ module RuboCop
         include VisibilityHelp
         extend AutoCorrector
 
-        HUMANIZED_NODE_TYPE = {
-          casgn: :constants,
-          defs: :class_methods,
-          def: :public_methods,
-          sclass: :class_singleton
-        }.freeze
+        MSG = '`%<category>s` is supposed to appear %<relation>s `%<other_category>s`.'
+        DEFAULT_CATEGORIES = %i[methods class_methods constants class_singleton initializer].freeze
 
-        MSG = '`%<category>s` is supposed to appear before `%<previous>s`.'
+        ATTRIBUTES = %i[attr_accessor attr_reader attr_writer attr].to_set.freeze
+        private_constant :ATTRIBUTES
 
-        # @!method dynamic_constant?(node)
-        def_node_matcher :dynamic_constant?, <<~PATTERN
-          (casgn nil? _ (send ...))
+        def self.support_multiple_source?
+          true
+        end
+
+        def initialize(*)
+          super
+          @classifer = Utils::ClassChildrenClassifier.new(all_symbolized_categories)
+          @expected_order_index = expected_order.map.with_index.to_h.transform_keys(&:to_sym)
+          @remap_initializer = if @expected_order_index.key?(:initializer)
+                                 :do_not_remap
+                               else
+                                 :initializer
+                               end
+        end
+
+        # @!method dynamic_expression?(node)
+        def_node_matcher :dynamic_expression?, <<~PATTERN
+          `{
+            (send {nil? self} ...)   # potential class method call
+            lvar                    # local variable
+            (const {nil? self} !{    # potentially local constant
+              :Set :Struct :Class   # but exclude known ones
+              :Module :Regexp :Dir :Ractor
+              :String :Hash :Array
+            })
+          }
+        PATTERN
+
+        # @!method dynamic_constant(node)
+        def_node_matcher :dynamic_constant, <<~PATTERN
+          (casgn nil? $_ #dynamic_expression?)
         PATTERN
 
         # Validates code style on class declaration.
         # Add offense when find a node out of expected order.
         def on_class(class_node)
-          previous = -1
-          walk_over_nested_class_definition(class_node) do |node, category|
-            index = expected_order.index(category)
-            if index < previous
-              message = format(MSG, category: category, previous: expected_order[previous])
-              add_offense(node, message: message) { |corrector| autocorrect(corrector, node) }
+          current = classify_all(class_node)
+          ordered = current.sort_by.with_index { |n, i| [group_order(n), i] }
+          return if current == ordered
+
+          used_categories = ordered.map { |n| expected_order[group_order(n)] }.uniq
+
+          each_move(current, ordered) do |node, relation, pos|
+            add_offense(node, message: message(node, relation, used_categories)) do |corrector|
+              move_code(corrector, node, relation, pos)
             end
-            previous = index
           end
         end
+
+        alias on_sclass on_class
 
         private
 
-        # Autocorrect by swapping between two nodes autocorrecting them
-        def autocorrect(corrector, node)
-          previous = node.left_siblings.find do |sibling|
-            !ignore_for_autocorrect?(node, sibling)
-          end
-          return unless previous
-
-          current_range = source_range_with_comment(node)
-          previous_range = source_range_with_comment(previous)
-
-          corrector.insert_before(previous_range, current_range.source)
-          corrector.remove(current_range)
+        def all_symbolized_categories
+          @all_symbolized_categories ||= {
+            **default_attribute_category,
+            **ungrouped_categories.map { |categ| [categ, [categ]] }.to_h,
+            **symbolized_categories
+          }
         end
 
-        # Classifies a node to match with something in the {expected_order}
-        # @param node to be analysed
-        # @return String when the node type is a `:block` then
-        #   {classify} recursively with the first children
-        # @return String when the node type is a `:send` then {find_category}
-        #   by method name
-        # @return String otherwise trying to {humanize_node} of the current node
-        def classify(node)
-          return node.to_s unless node.respond_to?(:type)
-
-          case node.type
-          when :block
-            classify(node.send_node)
-          when :send
-            find_category(node)
-          else
-            humanize_node(node)
-          end.to_s
+        # @return [Array<Symbol>] macros appearing directly in ExpectedOrder
+        def ungrouped_categories
+          @ungrouped_categories ||= expected_order
+                                    .map { |str| str.sub(/^(public|protected|private)_/, '') }
+                                    .uniq
+                                    .map(&:to_sym) - DEFAULT_CATEGORIES
         end
 
-        # Categorize a node according to the {expected_order}
-        # Try to match {categories} values against the node's method_name given
-        # also its visibility.
-        # @param node to be analysed.
-        # @return [String] with the key category or the `method_name` as string
-        def find_category(node)
-          name = node.method_name.to_s
-          category, = categories.find { |_, names| names.include?(name) }
-          key = category || name
-          visibility_key =
-            if node.def_modifier?
-              "#{name}_methods"
+        # @return [Hash<Symbol => Array<Symbol>>] config of Categories, using symbols
+        def symbolized_categories
+          @symbolized_categories ||= categories.map do |key, values|
+            [key.to_sym, values.map(&:to_sym)]
+          end.to_h
+        end
+
+        def default_attribute_category
+          missing = missing_attributes
+          return {} if missing.empty?
+
+          { methods: missing }
+        end
+
+        # @return [Array<Symbol>] the attribute methods that are not present in the config
+        def missing_attributes
+          missing = ATTRIBUTES - ungrouped_categories
+          symbolized_categories.values.inject(missing, :-)
+        end
+
+        def classify_all(class_node)
+          @dynamic_constants = nil
+          @classification = @classifer.classify_children(class_node)
+          @classification.map do |node, classification|
+            node if complete_classification(node, classification)
+          end.compact
+        end
+
+        def dynamic_constants
+          @dynamic_constants ||= @classification.keys.map { |node| dynamic_constant node }.compact
+        end
+
+        def dynamic_constant?(node)
+          c = @classification[node]
+          c[:group] == :constants && c[:names].any? { |name| dynamic_constants.include?(name) }
+        end
+
+        def each_move(current, ordered) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+          removed = Set[]
+          previous = Hash.new { |_h, k| k }
+          changes = Diff::LCS.diff(current, ordered).flatten(1)
+
+          changes.each do |kind, index, node|
+            if kind == '-'
+              removed << node
             else
-              "#{node_visibility(node)}_#{key}"
+              relation = removed.include?(node) ? :after : :before
+              prev = previous[index] = previous[index - 1]
+              if prev == -1
+                pos = at(begin_pos_with_comment(current[0]))
+              else
+                pos = at(end_position_for(ordered[prev]))
+                pos = succeeding_empty_line(pos) || pos if relation == :before
+              end
+              yield node, relation, pos
             end
-          expected_order.include?(visibility_key) ? visibility_key : key
-        end
-
-        def walk_over_nested_class_definition(class_node)
-          class_elements(class_node).each do |node|
-            classification = classify(node)
-            next if ignore?(classification)
-
-            yield node, classification
           end
         end
 
-        def class_elements(class_node)
-          class_def = class_node.body
-
-          return [] unless class_def
-
-          if class_def.def_type? || class_def.send_type?
-            [class_def]
-          else
-            class_def.children.compact
-          end
+        def at(pos)
+          Parser::Source::Range.new(buffer, pos, pos)
         end
 
-        def ignore?(classification)
-          classification.nil? ||
-            classification.to_s.end_with?('=') ||
-            expected_order.index(classification).nil?
+        def message(node, relation, used_categories)
+          category = expected_order[group_order(node)]
+          delta = relation == :before ? 1 : -1
+          other_category = used_categories[used_categories.index(category) + delta]
+          format(MSG, category: category, other_category: other_category, relation: relation)
+        end
+
+        def complete_classification(_node, classification) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+          return unless classification
+
+          affects = classification[:affects_categories] || []
+          categ = classification[:category]
+          categ = :methods if categ == @remap_initializer
+          # post macros without a particular category and
+          # refering only to unknowns are ignored
+          # (e.g. `private :some_unknown_method`)
+          return if classification[:macro] == :post && categ.nil? && affects.empty?
+
+          categ ||= classification[:group]
+          visibility = classification[:visibility]
+          classification[:group_order] = \
+            if affects.empty?
+              find_group_order(visibility, categ)
+            else
+              all = affects.map { |name| find_group_order(visibility, name) }
+              classification[:macro] == :pre ? all.min : all.max
+            end
+        end
+
+        def find_group_order(visibility, categ)
+          visibility_categ = :"#{visibility}_#{categ}"
+          @expected_order_index[visibility_categ] || @expected_order_index[categ]
+        end
+
+        # Autocorrect by swapping between two nodes autocorrecting them
+        def move_code(corrector, node, relation, position)
+          return if dynamic_constant?(node)
+
+          # We handle empty lines as follows:
+          # if `current` is preceeded with an empty line, remove it
+          # and add an empty line after `current`.
+          #
+          # This way:
+          #   <previous><current> => <current><previous>
+          #   <previous>\n<current> => <current>\n<previous>
+          #
+          # Of course, `current` and `previous` may not be adjacent,
+          # but this heuristic should provide adequate results.
+          current_range = source_range_with_comment(node)
+
+          if relation == :after && (empty_line = succeeding_empty_line(current_range))
+            corrector.remove(empty_line)
+            corrector.insert_after(position, "\n")
+          end
+          corrector.insert_after(position, current_range.source)
+          corrector.remove(current_range)
+          if relation == :before && (empty_line = preceeding_empty_line(current_range))
+            corrector.remove(empty_line)
+            corrector.insert_after(position, "\n")
+          end
+
+          nil
+        end
+
+        # @return [Range | nil]
+        def preceeding_empty_line(range)
+          prec = buffer.line_range(range.line - 1).adjust(end_pos: +1)
+          prec if prec.source.blank?
+        end
+
+        def succeeding_empty_line(range)
+          succ = buffer.line_range(range.last_line).adjust(end_pos: +1)
+          succ if succ.source.blank?
+        end
+
+        # @return [Integer | nil]
+        def group_order(node)
+          return unless (c = @classification[node])
+
+          c[:group_order]
         end
 
         def ignore_for_autocorrect?(node, sibling)
-          classification = classify(node)
-          sibling_class = classify(sibling)
+          index = group_order(node)
+          sibling_index = group_order(sibling)
 
-          ignore?(sibling_class) || classification == sibling_class || dynamic_constant?(node)
-        end
-
-        def humanize_node(node)
-          if node.def_type?
-            return :initializer if node.method?(:initialize)
-
-            return "#{node_visibility(node)}_methods"
-          end
-          HUMANIZED_NODE_TYPE[node.type] || node.type
+          sibling_index.nil? || index == sibling_index
         end
 
         def source_range_with_comment(node)
-          begin_pos, end_pos =
-            if node.def_type? && !node.method?(:initialize) || node.send_type? && node.def_modifier?
-              start_node = find_visibility_start(node) || node
-              end_node = find_visibility_end(node) || node
-              [begin_pos_with_comment(start_node),
-               end_position_for(end_node) + 1]
-            else
-              [begin_pos_with_comment(node), end_position_for(node)]
-            end
-
-          Parser::Source::Range.new(buffer, begin_pos, end_pos)
+          node.loc.expression.with(
+            begin_pos: begin_pos_with_comment(node),
+            end_pos: end_position_for(node)
+          )
         end
 
         def end_position_for(node)
@@ -281,22 +378,15 @@ module RuboCop
           return heredoc.location.heredoc_end.end_pos + 1 if heredoc
 
           end_line = buffer.line_for_position(node.loc.expression.end_pos)
-          buffer.line_range(end_line).end_pos
+          buffer.line_range(end_line).end_pos + 1
         end
 
         def begin_pos_with_comment(node)
-          first_comment = nil
-          (node.first_line - 1).downto(1) do |annotation_line|
-            break unless (comment = processed_source.comment_at_line(annotation_line))
+          exclude_line = (node.first_line - 1).downto(1).find do |annotation_line|
+            !buffer.source_line(annotation_line).match?(/^\s*#/)
+          end || 0
 
-            first_comment = comment
-          end
-
-          start_line_position(first_comment || node)
-        end
-
-        def start_line_position(node)
-          buffer.line_range(node.loc.line).begin_pos - 1
+          buffer.line_range(exclude_line + 1).begin_pos
         end
 
         def find_heredoc(node)
@@ -316,7 +406,7 @@ module RuboCop
         # Setting categories hash allow you to group methods in group to match
         # in the {expected_order}.
         def categories
-          cop_config['Categories']
+          cop_config['Categories'] || {}
         end
       end
     end

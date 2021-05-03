@@ -4,7 +4,6 @@ require 'pathname'
 
 # FIXME: Moving Rails department code to RuboCop Rails will remove
 # the following rubocop:disable comment.
-# rubocop:disable Metrics/ClassLength
 module RuboCop
   # This class represents the configuration of the RuboCop application
   # and all its cops. A Config is associated with a YAML configuration
@@ -19,7 +18,12 @@ module RuboCop
     CopConfig = Struct.new(:name, :metadata)
 
     DEFAULT_RAILS_VERSION = 5.0
-    attr_reader :loaded_path
+    def self.create(hash, path, check: true)
+      config = new(hash, path)
+      config.check if check
+
+      config
+    end
 
     def initialize(hash = {}, loaded_path = nil)
       @loaded_path = loaded_path
@@ -33,12 +37,7 @@ module RuboCop
       @validator = ConfigValidator.new(self)
     end
 
-    def self.create(hash, path, check: true)
-      config = new(hash, path)
-      config.check if check
-
-      config
-    end
+    attr_reader :loaded_path
 
     def loaded_features
       @loaded_features ||= ConfigLoader.loaded_features
@@ -290,4 +289,3 @@ module RuboCop
     end
   end
 end
-# rubocop:enable Metrics/ClassLength

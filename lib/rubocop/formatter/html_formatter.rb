@@ -23,13 +23,13 @@ module RuboCop
         end
       end
 
-      attr_reader :files, :summary
-
       def initialize(output, options = {})
         super
         @files = []
         @summary = OpenStruct.new(offense_count: 0)
       end
+
+      attr_reader :files, :summary
 
       def started(target_files)
         summary.target_files = target_files
@@ -78,12 +78,12 @@ module RuboCop
 
         LOGO_IMAGE_PATH = File.expand_path('../../../assets/logo.png', __dir__)
 
-        attr_reader :files, :summary
-
         def initialize(files, summary)
           @files = files.sort_by(&:path)
           @summary = summary
         end
+
+        attr_reader :files, :summary
 
         # Make Kernel#binding public.
         # rubocop:disable Lint/UselessMethodDefinition

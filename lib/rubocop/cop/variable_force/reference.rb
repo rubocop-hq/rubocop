@@ -11,8 +11,6 @@ module RuboCop
           [VARIABLE_REFERENCE_TYPE] + OPERATOR_ASSIGNMENT_TYPES + [ZERO_ARITY_SUPER_TYPE, SEND_TYPE]
         ).freeze
 
-        attr_reader :node, :scope
-
         def initialize(node, scope)
           unless VARIABLE_REFERENCE_TYPES.include?(node.type)
             raise ArgumentError,
@@ -23,6 +21,8 @@ module RuboCop
           @node = node
           @scope = scope
         end
+
+        attr_reader :node, :scope
 
         # There's an implicit variable reference by the zero-arity `super`:
         #

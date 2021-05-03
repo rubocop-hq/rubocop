@@ -13,8 +13,6 @@ module RuboCop
     #   ).annotate('message')
     #  #=> 'Cop/CopName: message (http://example.org/styleguide)'
     class MessageAnnotator
-      attr_reader :options, :config, :cop_name, :cop_config
-
       @style_guide_urls = {}
 
       class << self
@@ -50,6 +48,8 @@ module RuboCop
         @cop_config = cop_config || {}
         @options = options
       end
+
+      attr_reader :options, :config, :cop_name, :cop_config
 
       # Returns the annotated message,
       # based on params passed into initializer

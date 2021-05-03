@@ -6,8 +6,6 @@ module RuboCop
       # A subcommand in the CLI.
       # @api private
       class Base
-        attr_reader :env
-
         @subclasses = []
 
         class << self
@@ -29,6 +27,8 @@ module RuboCop
           @config_store = env.config_store
           @paths = env.paths
         end
+
+        attr_reader :env
       end
     end
   end

@@ -9,12 +9,12 @@ module RuboCop
     class JSONFormatter < BaseFormatter
       include PathUtil
 
-      attr_reader :output_hash
-
       def initialize(output, options = {})
         super
         @output_hash = { metadata: metadata_hash, files: [], summary: { offense_count: 0 } }
       end
+
+      attr_reader :output_hash
 
       def started(target_files)
         output_hash[:summary][:target_file_count] = target_files.count

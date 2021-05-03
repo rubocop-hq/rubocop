@@ -82,8 +82,6 @@ module RuboCop
       config_store.for_pwd.for_all_cops['AllowSymlinksInCacheRootDirectory']
     end
 
-    attr :path
-
     def initialize(file, team, options, config_store, cache_root = nil)
       cache_root ||= options[:cache_root]
       cache_root ||= ResultCache.cache_root(config_store)
@@ -96,6 +94,8 @@ module RuboCop
       @cached_data = CachedData.new(file)
       @debug = options[:debug]
     end
+
+    attr :path
 
     def debug?
       @debug

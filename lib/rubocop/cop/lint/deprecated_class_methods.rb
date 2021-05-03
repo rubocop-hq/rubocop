@@ -29,13 +29,13 @@ module RuboCop
         class DeprecatedClassMethod
           include RuboCop::AST::Sexp
 
-          attr_reader :class_constant, :deprecated_method, :replacement_method
-
           def initialize(deprecated:, replacement:, class_constant: nil)
             @deprecated_method = deprecated
             @replacement_method = replacement
             @class_constant = class_constant
           end
+
+          attr_reader :class_constant, :deprecated_method, :replacement_method
 
           def class_nodes
             @class_nodes ||=

@@ -6,8 +6,6 @@ module RuboCop
     module RegexpParser
       # Source map for RegexpParser nodes
       class Map < ::Parser::Source::Map
-        attr_reader :body, :quantifier, :begin, :end
-
         def initialize(expression, body:, quantifier: nil, begin_l: nil, end_l: nil)
           @begin = begin_l
           @end = end_l
@@ -15,6 +13,8 @@ module RuboCop
           @quantifier = quantifier
           super(expression)
         end
+
+        attr_reader :body, :quantifier, :begin, :end
       end
 
       module Expression

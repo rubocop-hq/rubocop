@@ -31,12 +31,12 @@ module RuboCop
 
         COP_NAME = 'Lint/RedundantCopDisableDirective'
 
-        attr_accessor :offenses_to_check
-
         def initialize(config = nil, options = nil, offenses = nil)
           @offenses_to_check = offenses
           super(config, options)
         end
+
+        attr_accessor :offenses_to_check
 
         def on_new_investigation
           return unless offenses_to_check

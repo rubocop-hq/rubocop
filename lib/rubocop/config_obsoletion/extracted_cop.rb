@@ -6,13 +6,13 @@ module RuboCop
     # functionality into multiple new cops.
     # @api private
     class ExtractedCop < CopRule
-      attr_reader :gem, :department
-
       def initialize(config, old_name, gem)
         super(config, old_name)
         @department, * = old_name.rpartition('/')
         @gem = gem
       end
+
+      attr_reader :gem, :department
 
       def violated?
         return false if feature_loaded?

@@ -40,8 +40,6 @@ module RuboCop
       include IgnoredNode
       include AutocorrectLogic
 
-      attr_reader :config, :processed_source
-
       # Reports of an investigation.
       # Immutable
       # Consider creation API private
@@ -68,11 +66,77 @@ module RuboCop
         Documentation.url_for(self) if builtin?
       end
 
+      # Override and return the Force class(es) you need to join
+      def self.joining_forces; end
+
+      def self.inherited(subclass)
+        super
+        Registry.global.enlist(subclass)
+      end
+
+      # Call for abstract Cop classes
+      def self.exclude_from_registry
+        Registry.global.dismiss(self)
+      end
+
+      # Returns if class supports auto_correct.
+      # It is recommended to extend AutoCorrector instead of overriding
+      def self.support_autocorrect?
+        false
+      end
+
+      ### Naming
+
+      def self.badge
+        @badge ||= Badge.for(name)
+      end
+
+      def self.cop_name
+        badge.to_s
+      end
+
+      def self.department
+        badge.department
+      end
+
+      def self.lint?
+        department == :Lint
+      end
+
+      # Returns true if the cop name or the cop namespace matches any of the
+      # given names.
+      def self.match?(given_names)
+        return false unless given_names
+
+        given_names.include?(cop_name) || given_names.include?(department.to_s)
+      end
+
+      # Override if your cop should be called repeatedly for multiple investigations
+      # Between calls to `on_new_investigation` and `on_investigation_end`,
+      # the result of `processed_source` will remain constant.
+      # You should invalidate any caches that depend on the current `processed_source`
+      # in the `on_new_investigation` callback.
+      # If your cop does autocorrections, be aware that your instance may be called
+      # multiple times with the same `processed_source.path` but different content.
+      def self.support_multiple_source?
+        false
+      end
+
+      # @api private
+      def self.callbacks_needed
+        @callbacks_needed ||= public_instance_methods.select do |m|
+          m.match?(/^on_|^after_/) &&
+            !Base.method_defined?(m) # exclude standard "callbacks" like 'on_begin_investigation'
+        end
+      end
+
       def initialize(config = nil, options = nil)
         @config = config || Config.new
         @options = options || { debug: false }
         reset_investigation
       end
+
+      attr_reader :config, :processed_source
 
       # Called before all on_... have been called
       # When refining this method, always call `super`
@@ -91,9 +155,6 @@ module RuboCop
       def on_other_file
         # Typically do nothing here
       end
-
-      # Override and return the Force class(es) you need to join
-      def self.joining_forces; end
 
       # Gets called if no message is specified when calling `add_offense` or
       # `add_global_offense`
@@ -148,48 +209,6 @@ module RuboCop
         nil
       end
 
-      def self.inherited(subclass)
-        super
-        Registry.global.enlist(subclass)
-      end
-
-      # Call for abstract Cop classes
-      def self.exclude_from_registry
-        Registry.global.dismiss(self)
-      end
-
-      # Returns if class supports auto_correct.
-      # It is recommended to extend AutoCorrector instead of overriding
-      def self.support_autocorrect?
-        false
-      end
-
-      ### Naming
-
-      def self.badge
-        @badge ||= Badge.for(name)
-      end
-
-      def self.cop_name
-        badge.to_s
-      end
-
-      def self.department
-        badge.department
-      end
-
-      def self.lint?
-        department == :Lint
-      end
-
-      # Returns true if the cop name or the cop namespace matches any of the
-      # given names.
-      def self.match?(given_names)
-        return false unless given_names
-
-        given_names.include?(cop_name) || given_names.include?(department.to_s)
-      end
-
       def cop_name
         @cop_name ||= self.class.cop_name
       end
@@ -237,17 +256,6 @@ module RuboCop
 
       ### Persistence
 
-      # Override if your cop should be called repeatedly for multiple investigations
-      # Between calls to `on_new_investigation` and `on_investigation_end`,
-      # the result of `processed_source` will remain constant.
-      # You should invalidate any caches that depend on the current `processed_source`
-      # in the `on_new_investigation` callback.
-      # If your cop does autocorrections, be aware that your instance may be called
-      # multiple times with the same `processed_source.path` but different content.
-      def self.support_multiple_source?
-        false
-      end
-
       # @api private
       # Called between investigations
       def ready
@@ -269,14 +277,6 @@ module RuboCop
       # @api private
       def callbacks_needed
         self.class.callbacks_needed
-      end
-
-      # @api private
-      def self.callbacks_needed
-        @callbacks_needed ||= public_instance_methods.select do |m|
-          m.match?(/^on_|^after_/) &&
-            !Base.method_defined?(m) # exclude standard "callbacks" like 'on_begin_investigation'
-        end
       end
 
       private

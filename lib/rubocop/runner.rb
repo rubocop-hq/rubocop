@@ -9,8 +9,6 @@ module RuboCop
     # An exception indicating that the inspection loop got stuck correcting
     # offenses back and forth.
     class InfiniteCorrectionLoop < RuntimeError
-      attr_reader :offenses
-
       def initialize(path, offenses_by_iteration, loop_start: -1)
         @offenses = offenses_by_iteration.flatten.uniq
         root_cause = offenses_by_iteration[loop_start..-1]
@@ -22,13 +20,12 @@ module RuboCop
         message += " and caused by #{root_cause}" if root_cause
         super message
       end
+
+      attr_reader :offenses
     end
 
     # @api private
     MAX_ITERATIONS = 200
-
-    attr_reader :errors, :warnings
-    attr_writer :aborting
 
     def initialize(options, config_store)
       @options = options
@@ -37,6 +34,9 @@ module RuboCop
       @warnings = []
       @aborting = false
     end
+
+    attr_reader :errors, :warnings
+    attr_writer :aborting
 
     def run(paths)
       target_files = find_target_files(paths)

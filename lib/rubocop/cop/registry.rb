@@ -19,7 +19,27 @@ module RuboCop
     class Registry
       include Enumerable
 
-      attr_reader :options
+      def self.all
+        global.without_department(:Test).cops
+      end
+
+      def self.qualified_cop_name(name, origin)
+        global.qualified_cop_name(name, origin)
+      end
+
+      # Changes momentarily the global registry
+      # Intended for testing purposes
+      def self.with_temporary_global(temp_global = global.dup)
+        previous = @global
+        @global = temp_global
+        yield
+      ensure
+        @global = previous
+      end
+
+      def self.reset!
+        @global = new
+      end
 
       def initialize(cops = [], options = {})
         @registry = {}
@@ -29,6 +49,8 @@ module RuboCop
         @enrollment_queue = cops
         @options = options
       end
+
+      attr_reader :options
 
       def enlist(cop)
         @enrollment_queue << cop
@@ -215,28 +237,6 @@ module RuboCop
 
       class << self
         attr_reader :global
-      end
-
-      def self.all
-        global.without_department(:Test).cops
-      end
-
-      def self.qualified_cop_name(name, origin)
-        global.qualified_cop_name(name, origin)
-      end
-
-      # Changes momentarily the global registry
-      # Intended for testing purposes
-      def self.with_temporary_global(temp_global = global.dup)
-        previous = @global
-        @global = temp_global
-        yield
-      ensure
-        @global = previous
-      end
-
-      def self.reset!
-        @global = new
       end
 
       private

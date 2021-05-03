@@ -15,12 +15,12 @@ module RuboCop
     # A place where information about a target ruby version is found.
     # @api private
     class Source
-      attr_reader :version, :name
-
       def initialize(config)
         @config = config
         @version = find_version
       end
+
+      attr_reader :version, :name
 
       def to_s
         name
@@ -222,10 +222,6 @@ module RuboCop
       end
     end
 
-    def self.supported_versions
-      KNOWN_RUBIES
-    end
-
     SOURCES = [
       RuboCopConfig,
       RubyVersionFile,
@@ -236,6 +232,10 @@ module RuboCop
     ].freeze
 
     private_constant :SOURCES
+
+    def self.supported_versions
+      KNOWN_RUBIES
+    end
 
     def initialize(config)
       @config = config

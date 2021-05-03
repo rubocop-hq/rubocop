@@ -12,15 +12,6 @@ module RuboCop
       CODE_TABLE = { I: :info, R: :refactor, C: :convention,
                      W: :warning, E: :error, F: :fatal }.freeze
 
-      # @api public
-      #
-      # @!attribute [r] name
-      #
-      # @return [Symbol]
-      #   severity.
-      #   any of `:info`, `:refactor`, `:convention`, `:warning`, `:error` or `:fatal`.
-      attr_reader :name
-
       def self.name_from_code(code)
         name = code.to_sym
         CODE_TABLE[name] || name
@@ -34,6 +25,15 @@ module RuboCop
         @name = name.freeze
         freeze
       end
+
+      # @api public
+      #
+      # @!attribute [r] name
+      #
+      # @return [Symbol]
+      #   severity.
+      #   any of `:info`, `:refactor`, `:convention`, `:warning`, `:error` or `:fatal`.
+      attr_reader :name
 
       def to_s
         @name.to_s

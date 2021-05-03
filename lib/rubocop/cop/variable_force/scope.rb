@@ -15,10 +15,6 @@ module RuboCop
           block:  0..0
         }.freeze
 
-        attr_reader :node, :variables, :naked_top_level
-
-        alias naked_top_level? naked_top_level
-
         def initialize(node)
           unless SCOPE_TYPES.include?(node.type)
             # Accept any node type for top level scope
@@ -31,6 +27,10 @@ module RuboCop
           @node = node
           @variables = {}
         end
+
+        attr_reader :node, :variables, :naked_top_level
+
+        alias naked_top_level? naked_top_level
 
         def ==(other)
           @node.equal?(other.node)

@@ -4,8 +4,6 @@ module RuboCop
   module Cop
     # A scaffold for concrete forces.
     class Force
-      attr_reader :cops
-
       def self.all
         @all ||= []
       end
@@ -22,6 +20,8 @@ module RuboCop
       def initialize(cops)
         @cops = cops
       end
+
+      attr_reader :cops
 
       def name
         self.class.force_name

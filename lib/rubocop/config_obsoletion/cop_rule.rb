@@ -5,12 +5,12 @@ module RuboCop
     # Base class for ConfigObsoletion rules relating to cops
     # @api private
     class CopRule < Rule
-      attr_reader :old_name
-
       def initialize(config, old_name)
         super(config)
         @old_name = old_name
       end
+
+      attr_reader :old_name
 
       def cop_rule?
         true

@@ -9,10 +9,6 @@ module RuboCop
 
         MULTIPLE_LEFT_HAND_SIDE_TYPE = :mlhs
 
-        attr_reader :node, :variable, :referenced, :references
-
-        alias referenced? referenced
-
         def initialize(node, variable)
           unless VARIABLE_ASSIGNMENT_TYPES.include?(node.type)
             raise ArgumentError,
@@ -25,6 +21,10 @@ module RuboCop
           @referenced = false
           @references = []
         end
+
+        attr_reader :node, :variable, :referenced, :references
+
+        alias referenced? referenced
 
         def name
           @node.children.first

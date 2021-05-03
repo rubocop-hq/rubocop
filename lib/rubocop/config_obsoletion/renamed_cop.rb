@@ -6,12 +6,12 @@ module RuboCop
     # a cop or moving it to a new department.
     # @api private
     class RenamedCop < CopRule
-      attr_reader :new_name
-
       def initialize(config, old_name, new_name)
         super(config, old_name)
         @new_name = new_name
       end
+
+      attr_reader :new_name
 
       def rule_message
         "The `#{old_name}` cop has been #{verb} to `#{new_name}`."

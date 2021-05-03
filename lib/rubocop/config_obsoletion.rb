@@ -16,8 +16,6 @@ module RuboCop
       'changed_enforced_styles' => ChangedEnforcedStyles
     }.freeze
 
-    attr_reader :rules, :warnings
-
     class << self
       attr_accessor :files
 
@@ -35,6 +33,8 @@ module RuboCop
       @rules = load_rules
       @warnings = []
     end
+
+    attr_reader :rules, :warnings
 
     def reject_obsolete!
       messages = obsoletions.flatten.compact

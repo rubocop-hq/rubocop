@@ -5,13 +5,13 @@ module RuboCop
     # Execution environment for a CLI command.
     # @api private
     class Environment
-      attr_reader :options, :config_store, :paths
-
       def initialize(options, config_store, paths)
         @options = options
         @config_store = config_store
         @paths = paths
       end
+
+      attr_reader :options, :config_store, :paths
 
       # Run a command in this environment.
       def run(name)

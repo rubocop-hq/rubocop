@@ -10,8 +10,6 @@ module RuboCop
         class Macro
           include VisibilityHelp
 
-          attr_reader :node, :attrs, :bisection
-
           def self.macro?(node)
             node.method?(:attr_reader) || node.method?(:attr_writer) || node.method?(:attr)
           end
@@ -21,6 +19,8 @@ module RuboCop
             @attrs = node.arguments.map { |attr| [attr.source, attr] }.to_h
             @bisection = []
           end
+
+          attr_reader :node, :attrs, :bisection
 
           def bisect(*names)
             @bisection = attrs.slice(*names).values

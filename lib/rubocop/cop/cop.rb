@@ -9,8 +9,6 @@ module RuboCop
     # Legacy scaffold for Cops.
     # See https://docs.rubocop.org/rubocop/cop_api_v1_changelog.html
     class Cop < Base
-      attr_reader :offenses
-
       exclude_from_registry
 
       # @deprecated
@@ -21,6 +19,34 @@ module RuboCop
           raise ErrorWithAnalyzedFileLocation.new(cause: e, node: node, cop: cop)
         end
       end
+
+      def self.support_autocorrect?
+        method_defined?(:autocorrect)
+      end
+
+      def self.joining_forces
+        return unless method_defined?(:join_force?)
+
+        cop = new
+        Force.all.select { |force_class| cop.join_force?(force_class) }
+      end
+
+      # @deprecated Use Registry.global
+      def self.registry
+        Registry.global
+      end
+
+      # @deprecated Use Registry.all
+      def self.all
+        Registry.all
+      end
+
+      # @deprecated Use Registry.qualified_cop_name
+      def self.qualified_cop_name(name, origin)
+        Registry.qualified_cop_name(name, origin)
+      end
+
+      attr_reader :offenses
 
       def add_offense(node_or_range, location: :expression, message: nil, severity: nil, &block)
         @v0_argument = node_or_range
@@ -45,17 +71,6 @@ module RuboCop
         self.class.support_autocorrect?
       end
 
-      def self.support_autocorrect?
-        method_defined?(:autocorrect)
-      end
-
-      def self.joining_forces
-        return unless method_defined?(:join_force?)
-
-        cop = new
-        Force.all.select { |force_class| cop.join_force?(force_class) }
-      end
-
       # @deprecated
       def corrections
         # warn 'Cop#corrections is deprecated' TODO
@@ -77,21 +92,6 @@ module RuboCop
       end
 
       ### Deprecated registry access
-
-      # @deprecated Use Registry.global
-      def self.registry
-        Registry.global
-      end
-
-      # @deprecated Use Registry.all
-      def self.all
-        Registry.all
-      end
-
-      # @deprecated Use Registry.qualified_cop_name
-      def self.qualified_cop_name(name, origin)
-        Registry.qualified_cop_name(name, origin)
-      end
 
       private
 

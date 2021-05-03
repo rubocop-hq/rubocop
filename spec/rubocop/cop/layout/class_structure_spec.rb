@@ -15,8 +15,10 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           public_methods
           protected_attribute_macros
           protected_methods
+          private_constants
           private_attribute_macros
           private_delegate
+          private_class_methods
           private_methods
         ],
         'Categories' => {
@@ -101,9 +103,12 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense <<~RUBY
         class Person
           CONST = 'wrong place'
+          CONST2 = 'wrong place2'
+          CONST3 = 'wrong place3'
           include AnotherModule
           ^^^^^^^^^^^^^^^^^^^^^ `module_inclusion` is supposed to appear before `constants`.
           extend SomeModule
+          ^^^^^^^^^^^^^^^^^ `module_inclusion` is supposed to appear before `constants`.
         end
       RUBY
 
@@ -112,93 +117,192 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
           include AnotherModule
           extend SomeModule
           CONST = 'wrong place'
+          CONST2 = 'wrong place2'
+          CONST3 = 'wrong place3'
+        end
+      RUBY
+    end
+  end
+
+  context 'simple example, moving down' do
+    specify do
+      expect_offense <<~RUBY
+        class Person
+          CONST = 'wrong place'
+          ^^^^^^^^^^^^^^^^^^^^^ `constants` is supposed to appear after `module_inclusion`.
+
+          include AnotherModule
+          extend SomeModule
+
+          private def foo; end
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Person
+          include AnotherModule
+          extend SomeModule
+
+          CONST = 'wrong place'
+
+          private def foo; end
+        end
+      RUBY
+    end
+  end
+
+  context 'with a class with an inline comment' do
+    it 'does not get confused' do
+      expect_offense <<~'RUBY'
+        class Foo # comment needed for this to fail!
+          def bar
+          end
+
+          def baz
+          end
+
+          attr_reader :foo
+          ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `public_methods`.
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Foo # comment needed for this to fail!
+          attr_reader :foo
+
+          def bar
+          end
+
+          def baz
+          end
         end
       RUBY
     end
   end
 
   context 'with protected methods declared before private' do
-    let(:code) { <<-RUBY }
-      class MyClass
-        def public_method
+    it 'corrects it' do
+      expect_offense(<<~RUBY)
+        class MyClass
+          def public_method
+          end
+
+          private
+
+          def first_private_method
+          end
+
+          def second_private_method
+          end
+
+          def third_private_method
+          end
+
+          protected
+          ^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
+
+          def first_protected_method
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
+          end
+
+          def second_protected_method
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
+          end
         end
+      RUBY
 
-        private
+      expect_correction(<<~RUBY)
+        class MyClass
+          def public_method
+          end
 
-        def first_private_method
+          protected
+
+          def first_protected_method
+          end
+
+          def second_protected_method
+          end
+
+          private
+
+          def first_private_method
+          end
+
+          def second_private_method
+          end
+
+          def third_private_method
+          end
         end
-
-        def second_private_method
-        end
-
-        protected
-
-        def first_protected_method
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^ `protected_methods` is supposed to appear before `private_methods`.
-        end
-
-        def second_protected_method
-        end
-      end
-    RUBY
-
-    it { expect_offense(code) }
+      RUBY
+    end
   end
 
   context 'with attribute macros before after validations' do
-    let(:code) { <<-RUBY }
-      class Person
-        include AnotherModule
-        extend SomeModule
+    it 'corrects it' do
+      expect_offense(<<~RUBY)
+        class Person
+          include AnotherModule
+          extend SomeModule
 
-        CustomError = Class.new(StandardError)
+          CustomError = Class.new(StandardError)
 
-        validates :name
+          validates :name
 
-        attr_reader :name
-        ^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
+          validates :address
 
-        def self.some_public_class_method
+          attr_reader :name
+          ^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
         end
+      RUBY
 
-        def initialize
+      expect_correction(<<~RUBY)
+        class Person
+          include AnotherModule
+          extend SomeModule
+
+          CustomError = Class.new(StandardError)
+
+          attr_reader :name
+
+          validates :name
+
+          validates :address
         end
-
-        def some_public_method
-        end
-
-        def other_public_method
-        end
-
-        private :other_public_method
-
-        def yet_other_public_method
-        end
-
-        protected
-
-        def some_protected_method
-        end
-
-        private
-
-        def some_private_method
-        end
-      end
-    RUBY
-
-    it { expect_offense(code) }
+      RUBY
+    end
   end
 
-  context 'constant is not a literal' do
+  context 'dynamic constant' do
     it 'registers offense but does not autocorrect' do
       expect_offense <<~RUBY
         class Person
           def name; end
+          def address; end
 
           foo = 5
           LIMIT = foo + 1
           ^^^^^^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
+        end
+      RUBY
+
+      expect_no_corrections
+    end
+
+    it 'registers offense but does not autocorrect private_constant' do
+      expect_offense <<~RUBY
+        class Person
+          private
+          def name; end
+          def address; end
+          def email; end
+
+          foo = 5
+          LIMIT = foo + 1
+          ^^^^^^^^^^^^^^^ `private_constants` is supposed to appear before `private_methods`.
+          private_constant :LIMIT
+          ^^^^^^^^^^^^^^^^^^^^^^^ `private_constants` is supposed to appear before `private_methods`.
         end
       RUBY
 
@@ -211,6 +315,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       class Foo
         # This is a comment for macro method.
         validates :attr
+        validates :attr2
         attr_reader :foo
         ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
       end
@@ -221,6 +326,31 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         attr_reader :foo
         # This is a comment for macro method.
         validates :attr
+        validates :attr2
+      end
+    RUBY
+  end
+
+  it 'reorders things, keeping the relative order intact' do
+    expect_offense(<<~RUBY)
+      class Foo
+        validates :name
+        validates :attr
+        attr_reader :foo
+        ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
+        validates :attr2
+        attr_reader :bar
+        ^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `macros`.
+      end
+    RUBY
+
+    expect_correction(<<~RUBY)
+      class Foo
+        attr_reader :foo
+        attr_reader :bar
+        validates :name
+        validates :attr
+        validates :attr2
       end
     RUBY
   end
@@ -229,6 +359,7 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_offense(<<~RUBY)
       class Foo
         def name; end
+        def address; end
 
         LIMIT = 10
         ^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
@@ -238,16 +369,56 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_correction(<<~RUBY)
       class Foo
         LIMIT = 10
-        def name; end
 
+        def name; end
+        def address; end
       end
     RUBY
+  end
+
+  context 'with private constants' do
+    context 'with unrecognized constants' do
+      it 'does not register an offense for unrecognized constants' do
+        expect_no_offenses(<<~RUBY)
+          class Foo
+            include Bar
+            private_constant :LIMIT # e.g. part of Bar
+
+            def name; end
+          end
+        RUBY
+      end
+    end
+
+    it 'registers an offense and corrects for literal private constants' do
+      expect_offense(<<~RUBY)
+        class Foo
+          LIMIT = 10
+          private_constant :LIMIT
+
+          def name; end
+          ^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_constants`.
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Foo
+          def name; end
+
+          LIMIT = 10
+          private_constant :LIMIT
+        end
+      RUBY
+    end
   end
 
   it 'registers an offense and corrects when str heredoc constant is defined after public method' do
     expect_offense(<<~RUBY)
       class Foo
         def do_something
+        end
+
+        def do_something_else
         end
 
         CONSTANT = <<~EOS
@@ -264,6 +435,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         EOS
 
         def do_something
+        end
+
+        def do_something_else
         end
       end
     RUBY
@@ -275,9 +449,12 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
         def do_something
         end
 
+        def do_something_else
+        end
+
         CONSTANT = <<~EOS
         ^^^^^^^^^^^^^^^^^ `constants` is supposed to appear before `public_methods`.
-          #{str}
+          #{2 + 2}
         EOS
       end
     RUBY
@@ -285,10 +462,13 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_correction(<<~'RUBY')
       class Foo
         CONSTANT = <<~EOS
-          #{str}
+          #{2 + 2}
         EOS
 
         def do_something
+        end
+
+        def do_something_else
         end
       end
     RUBY
@@ -298,6 +478,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
     expect_offense(<<~'RUBY')
       class Foo
         def do_something
+        end
+
+        def do_something_else
         end
 
         CONSTANT = <<~`EOS`
@@ -315,6 +498,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
         def do_something
         end
+
+        def do_something_else
+        end
       end
     RUBY
   end
@@ -324,6 +510,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense(<<~RUBY)
         class A
           private def foo
+          end
+
+          private def qux
           end
 
           public def bar
@@ -339,6 +528,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           private def foo
           end
+
+          private def qux
+          end
         end
       RUBY
     end
@@ -347,6 +539,9 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
       expect_offense(<<~RUBY)
         class A
           private def foo
+          end
+
+          private def qux
           end
 
           def bar
@@ -362,6 +557,40 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           private def foo
           end
+
+          private def qux
+          end
+        end
+      RUBY
+    end
+  end
+
+  context 'when defs modifier is used' do
+    it 'registers an offense for public class methods after private class methods' do
+      expect_offense(<<~RUBY)
+        class A
+          private_class_method def self.foo
+          end
+
+          private_class_method def self.qux
+          end
+
+          public_class_method def self.bar
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `public_class_methods` is supposed to appear before `private_class_methods`.
+          end
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class A
+          public_class_method def self.bar
+          end
+
+          private_class_method def self.foo
+          end
+
+          private_class_method def self.qux
+          end
         end
       RUBY
     end
@@ -375,6 +604,8 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           attr_accessor :foo
 
+          attr_accessor :bar
+
           def initialize
           ^^^^^^^^^^^^^^ `initializer` is supposed to appear before `private_attribute_macros`.
           end
@@ -387,10 +618,143 @@ RSpec.describe RuboCop::Cop::Layout::ClassStructure, :config do
 
           def initialize
           end
+
           attr_accessor :foo
 
+          attr_accessor :bar
         end
       RUBY
     end
   end
+
+  it 'does not get confused by single node bodies' do
+    expect_no_offenses(<<~RUBY)
+      class A
+        test&.private_methods(def foo; end)
+      end
+    RUBY
+  end
+
+  it 'does not get confused by kwbegin nodes' do
+    expect_offense(<<~RUBY)
+      class A
+        begin
+          begin
+            private def foo; end
+            private def qux; end
+            public def bar; end
+            ^^^^^^^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_methods`.
+          end
+        end
+      end
+    RUBY
+  end
+
+  it 'does not get confused by non-macro calls' do
+    expect_no_offenses(<<~RUBY)
+      class A
+        def bar
+        end
+
+        singleton_class.attr_reader :foo
+      end
+    RUBY
+  end
+
+  it 'handles categories visibility with inline style too' do
+    expect_offense(<<~RUBY)
+      class A
+        private attr_accessor :foo
+
+        private attr_accessor :qux
+
+        attr_accessor :bar
+        ^^^^^^^^^^^^^^^^^^ `attribute_macros` is supposed to appear before `private_attribute_macros`.
+      end
+    RUBY
+  end
+
+  it 'treats inline unknown macros as not recognized' do
+    expect_no_offenses(<<~RUBY)
+      class A
+        private something
+
+        def bar
+        end
+      end
+    RUBY
+  end
+
+  it 'considers singleton class too' do
+    expect_offense(<<~RUBY)
+      class << A
+        private def foo; end
+        private def qux; end
+        public def bar; end
+        ^^^^^^^^^^^^^^^^^^^ `public_methods` is supposed to appear before `private_methods`.
+      end
+    RUBY
+  end
+
+  context 'with a minimal config' do
+    let(:config) do
+      RuboCop::Config.new(
+        'Layout/ClassStructure' => {
+          'ExpectedOrder' => %w[
+            constants
+            methods
+            class_methods
+          ]
+        }
+      )
+    end
+
+    it 'uses "methods" as default for attribute methods' do
+      expect_offense(<<~RUBY)
+        class Example
+          attr_reader :foo
+          ^^^^^^^^^^^^^^^^ `methods` is supposed to appear after `constants`.
+          protected attr_writer :bar
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^ `methods` is supposed to appear after `constants`.
+          FOO = 42
+          BAR = 42
+          BAZ = 42
+        end
+      RUBY
+    end
+
+    it 'uses "methods" as default for initializer' do
+      expect_offense(<<~RUBY)
+        class Example
+          def initialize
+          ^^^^^^^^^^^^^^ `methods` is supposed to appear after `constants`.
+          end
+          FOO = 42
+          BAR = 42
+          BAZ = 42
+        end
+      RUBY
+    end
+  end
+
+  # rubocop:disable RSpec/PredicateMatcher
+  describe '#dynamic_expression?' do
+    RSpec::Matchers.define :be_dynamic do
+      match do |actual|
+        ast = parse_source(actual).ast
+        cop.dynamic_expression?(ast)
+      end
+    end
+
+    it { expect('local = 42; [local]').to be_dynamic }
+    it { expect('Foo').to be_dynamic }
+    it { expect('foo').to be_dynamic }
+    it { expect('self.foo').to be_dynamic }
+    it { expect('[1, 2, [3, 4, [foo]]]').to be_dynamic }
+
+    it { expect('Set[1, 2, 3].freeze').not_to be_dynamic }
+    it { expect('Struct.new(:x, :y) {}').not_to be_dynamic }
+    it { expect('1 + 1 > 2 ? %w[a b c] : %w[d e f]').not_to be_dynamic }
+  end
+  # rubocop:enable RSpec/PredicateMatcher
 end

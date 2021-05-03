@@ -11,8 +11,6 @@ module RuboCop
   # The specs will be run in parallel if the system implements `fork`.
   # If ENV['COVERAGE'] is truthy, code coverage will be measured.
   class SpecRunner
-    attr_reader :rspec_args
-
     def initialize(rspec_args = %w[spec], parallel: true,
                    external_encoding: 'UTF-8', internal_encoding: nil)
       @rspec_args = rspec_args
@@ -23,6 +21,8 @@ module RuboCop
       @temporary_internal_encoding = internal_encoding
       @parallel = parallel
     end
+
+    attr_reader :rspec_args
 
     def run_specs
       n_failures = with_encoding do

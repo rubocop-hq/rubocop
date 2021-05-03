@@ -7,14 +7,14 @@ module RuboCop
   # Common methods and behaviors for dealing with remote config files.
   # @api private
   class RemoteConfig
-    attr_reader :uri
-
     CACHE_LIFETIME = 24 * 60 * 60
 
     def initialize(url, base_dir)
       @uri = URI.parse(url)
       @base_dir = base_dir
     end
+
+    attr_reader :uri
 
     def file
       return cache_path unless cache_path_expired?

@@ -39,8 +39,6 @@ module RuboCop
         end
       end
 
-      attr_reader :errors
-
       def initialize(cops, forces = [], options = {})
         @cops = cops
         @forces = forces
@@ -49,6 +47,8 @@ module RuboCop
 
         reset
       end
+
+      attr_reader :errors
 
       # Create methods like :on_send, :on_super, etc. They will be called
       # during AST traversal and try to call corresponding methods on cops.
