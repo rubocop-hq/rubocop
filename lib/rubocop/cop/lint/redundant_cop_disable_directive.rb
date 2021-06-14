@@ -108,10 +108,9 @@ module RuboCop
           end
         end
 
-        def each_line_range(line_ranges, disabled_ranges, offenses,
-                            cop)
+        def each_line_range(line_ranges, disabled_ranges, offenses, cop)
           line_ranges.each_with_index do |line_range, ix|
-            comment = processed_source.comment_at_line(line_range.begin)
+            comment = comment_for_line(line_range.begin)
             next if ignore_offense?(disabled_ranges, line_range)
 
             redundant_cop = find_redundant(comment, offenses, cop, line_range, line_ranges[ix + 1])
@@ -128,7 +127,7 @@ module RuboCop
             # the end of the previous range, it means that the cop was
             # already disabled by an earlier comment. So it's redundant
             # whether there are offenses or not.
-            comment = processed_source.comment_at_line(range.begin)
+            comment = comment_for_line(range.begin)
 
             # Comments disabling all cops don't count since it's reasonable
             # to disable a few select cops first and then all cops further
@@ -254,6 +253,11 @@ module RuboCop
         def ends_its_line?(range)
           line = range.source_buffer.source_line(range.last_line)
           (line =~ /\s*\z/) == range.last_column
+        end
+
+        def comment_for_line(line)
+          # For case when `disable-next-line` is used
+          processed_source.comment_at_line(line) || processed_source.comment_at_line(line - 1)
         end
       end
     end

@@ -14,9 +14,10 @@ module RuboCop
     # @api private
     COPS_PATTERN = "(all|#{COP_NAMES_PATTERN})"
     # @api private
+    DIRECTIVE_COMMENT_MODES = '(?:disable|disable-next-line|enable|todo|todo-next-line)'
+    # @api private
     DIRECTIVE_COMMENT_REGEXP = Regexp.new(
-      "# rubocop : ((?:disable|enable|todo))\\b #{COPS_PATTERN}"
-        .gsub(' ', '\s*')
+      "# rubocop : (#{DIRECTIVE_COMMENT_MODES})\\b #{COPS_PATTERN}".gsub(' ', '\s*')
     )
 
     def self.before_comment(line)
@@ -56,6 +57,11 @@ module RuboCop
     # Checks if this directive disables cops
     def disabled?
       %w[disable todo].include?(mode)
+    end
+
+    # Checks if this directive disables cops only on next line
+    def disabled_next_line?
+      %w[disable-next-line todo-next-line].include?(mode)
     end
 
     # Checks if this directive enables cops

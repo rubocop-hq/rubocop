@@ -226,4 +226,20 @@ RSpec.describe RuboCop::Cop::Lint::RedundantCopEnableDirective, :config do
       end
     end
   end
+
+  context 'when cop disabled with `disable-next-line` and enabled again' do
+    it 'registers an offense and corrects' do
+      expect_offense(<<~RUBY)
+        # rubocop:disable-next-line Layout/LineLength
+        foo
+        # rubocop:enable Layout/LineLength
+                         ^^^^^^^^^^^^^^^^^ Unnecessary enabling of Layout/LineLength.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        # rubocop:disable-next-line Layout/LineLength
+        foo
+      RUBY
+    end
+  end
 end

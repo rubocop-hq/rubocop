@@ -699,6 +699,14 @@ comment.
 for x in (0..19) # rubocop:disable Style/For
 ----
 
+Also cops can be disabled on a single next line with a comment.
+
+[source,ruby]
+----
+# rubocop:disable-next-line Style/For
+for x in (0..19)
+----
+
 If you want to disable a cop that inspects comments, you can do so by
 adding an "inner comment" on the comment line.
 

@@ -503,5 +503,59 @@ RSpec.describe RuboCop::Cop::Lint::RedundantCopDisableDirective, :config do
         end
       end
     end
+
+    context 'when cop disabled with `disable-next-line`' do
+      context 'and there is an offense' do
+        let(:offenses) do
+          [
+            RuboCop::Cop::Offense.new(:convention,
+                                      OpenStruct.new(line: 2, column: 0),
+                                      'Class has too many lines.',
+                                      'Metrics/ClassLength')
+          ]
+        end
+
+        it 'returns no offenses' do
+          expect_no_offenses(<<~RUBY)
+            # rubocop:disable-next-line Metrics/ClassLength
+            class Foo
+            end
+          RUBY
+        end
+
+        context 'and cop disabled again with line directive' do
+          it 'returns no offenses' do
+            expect_offense(<<~RUBY)
+              # rubocop:disable-next-line Metrics/ClassLength
+              class Foo # rubocop:disable Metrics/ClassLength
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Unnecessary disabling of `Metrics/ClassLength`.
+              end
+            RUBY
+
+            expect_correction(<<~RUBY)
+              # rubocop:disable-next-line Metrics/ClassLength
+              class Foo
+              end
+            RUBY
+          end
+        end
+      end
+
+      context 'and there is no offenses' do
+        it 'removes the comment' do
+          expect_offense(<<~RUBY)
+            # rubocop:disable-next-line Metrics/ClassLength
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Unnecessary disabling of `Metrics/ClassLength`.
+            class Foo
+            end
+          RUBY
+
+          expect_correction(<<~RUBY)
+            class Foo
+            end
+          RUBY
+        end
+      end
+    end
   end
 end
