@@ -4386,10 +4386,13 @@ Style/RegexpLiteral:
   # slashes: Always use slashes.
   # percent_r: Always use `%r`.
   # mixed: Use slashes on single-line regexes, and `%r` on multi-line regexes.
+  # mixed_preserve: Preserve current style and only use `%r` if AllowInnerSlashes=false
+  #   and regexp string contains one or more slashes.
   SupportedStyles:
     - slashes
     - percent_r
     - mixed
+    - mixed_preserve
   # If `false`, the cop will always recommend using `%r` if one or more slashes
   # are found in the regexp string.
   AllowInnerSlashes: false

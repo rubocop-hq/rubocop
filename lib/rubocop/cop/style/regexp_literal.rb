@@ -68,6 +68,30 @@ module RuboCop
       #     (baz)
       #   }x
       #
+      # @example EnforcedStyle: mixed_preserve and AllowInnerSlashes: false
+      #   # bad
+      #   x =~ /home\//
+      #
+      #   # good
+      #   x =~ %r{home/}
+      #
+      #   # good
+      #   regex = /
+      #     foo
+      #     (bar)
+      #     (baz)
+      #   /x
+      #
+      #   # good
+      #   snake_case = /^[\dA-Z_]+$/
+      #
+      #   # good
+      #   regex = %r{
+      #     foo
+      #     (bar)
+      #     (baz)
+      #   }x
+      #
       # @example AllowInnerSlashes: false (default)
       #   # If `false`, the cop will always recommend using `%r` if one or more
       #   # slashes are found in the regexp string.
@@ -107,7 +131,9 @@ module RuboCop
         private
 
         def allowed_slash_literal?(node)
-          style == :slashes && !contains_disallowed_slash?(node) || allowed_mixed_slash?(node)
+          style == :slashes && !contains_disallowed_slash?(node) ||
+            allowed_mixed_slash?(node) ||
+            allowed_mixed_preserve?(node)
         end
 
         def allowed_mixed_slash?(node)
@@ -117,11 +143,16 @@ module RuboCop
         def allowed_percent_r_literal?(node)
           style == :slashes && contains_disallowed_slash?(node) ||
             style == :percent_r ||
-            allowed_mixed_percent_r?(node)
+            allowed_mixed_percent_r?(node) ||
+            allowed_mixed_preserve?(node)
         end
 
         def allowed_mixed_percent_r?(node)
           style == :mixed && node.multiline? || contains_disallowed_slash?(node)
+        end
+
+        def allowed_mixed_preserve?(node)
+          style == :mixed_preserve && !contains_disallowed_slash?(node)
         end
 
         def contains_disallowed_slash?(node)

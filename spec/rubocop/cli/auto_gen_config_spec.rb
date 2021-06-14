@@ -944,7 +944,7 @@ RSpec.describe 'RuboCop::CLI --auto-gen-config', :isolated_environment do # rubo
          '# Offense count: 1',
          '# Cop supports --auto-correct.',
          '# Configuration parameters: EnforcedStyle, AllowInnerSlashes.',
-         '# SupportedStyles: slashes, percent_r, mixed',
+         '# SupportedStyles: slashes, percent_r, mixed, mixed_preserve',
          'Style/RegexpLiteral:',
          '  Exclude:',
          "    - 'example.rb'"]
