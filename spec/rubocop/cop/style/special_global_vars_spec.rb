@@ -2,122 +2,213 @@
 
 RSpec.describe RuboCop::Cop::Style::SpecialGlobalVars, :config do
   context 'when style is use_english_names' do
-    let(:cop_config) { { 'EnforcedStyle' => 'use_english_names' } }
+    context 'when add require English is disabled' do
+      let(:cop_config) do
+        {
+          'EnforcedStyle' => 'use_english_names',
+          'CorrecAddRequireEnglish' => false
+        }
+      end
 
-    it 'registers an offense for $:' do
-      expect_offense(<<~RUBY)
-        puts $:
-             ^^ Prefer `$LOAD_PATH` over `$:`.
-      RUBY
+      it 'registers an offense for $:' do
+        expect_offense(<<~RUBY)
+          puts $:
+               ^^ Prefer `$LOAD_PATH` over `$:`.
+        RUBY
 
-      expect_correction(<<~RUBY)
-        puts $LOAD_PATH
-      RUBY
+        expect_correction(<<~RUBY)
+          puts $LOAD_PATH
+        RUBY
+      end
+
+      it 'registers an offense for $"' do
+        expect_offense(<<~RUBY)
+          puts $"
+               ^^ Prefer `$LOADED_FEATURES` over `$"`.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          puts $LOADED_FEATURES
+        RUBY
+      end
+
+      it 'registers an offense for $0' do
+        expect_offense(<<~RUBY)
+          puts $0
+               ^^ Prefer `$PROGRAM_NAME` over `$0`.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          puts $PROGRAM_NAME
+        RUBY
+      end
+
+      it 'registers an offense for $$' do
+        expect_offense(<<~RUBY)
+          puts $$
+               ^^ Prefer `$PROCESS_ID` or `$PID` from the stdlib 'English' module (don't forget to require it) over `$$`.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          puts $PROCESS_ID
+        RUBY
+      end
+
+      it 'is clear about variables from the English library vs those not' do
+        expect_offense(<<~RUBY)
+          puts $*
+               ^^ Prefer `$ARGV` from the stdlib 'English' module (don't forget to require it) or `ARGV` over `$*`.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          puts $ARGV
+        RUBY
+      end
+
+      it 'does not register an offense for backrefs like $1' do
+        expect_no_offenses('puts $1')
+      end
+
+      it 'auto-corrects $/ to $INPUT_RECORD_SEPARATOR' do
+        expect_offense(<<~RUBY)
+          $/
+          ^^ Prefer `$INPUT_RECORD_SEPARATOR` or `$RS` from the stdlib 'English' module (don't forget to require it) over `$/`.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          $INPUT_RECORD_SEPARATOR
+        RUBY
+      end
+
+      it 'auto-corrects #$: to #{$LOAD_PATH}' do
+        expect_offense(<<~'RUBY')
+          "#$:"
+            ^^ Prefer `$LOAD_PATH` over `$:`.
+        RUBY
+
+        expect_correction(<<~'RUBY')
+          "#{$LOAD_PATH}"
+        RUBY
+      end
+
+      it 'auto-corrects #{$!} to #{$ERROR_INFO}' do
+        expect_offense(<<~'RUBY')
+          "#{$!}"
+             ^^ Prefer `$ERROR_INFO` from the stdlib 'English' module (don't forget to require it) over `$!`.
+        RUBY
+
+        expect_correction(<<~'RUBY')
+          "#{$ERROR_INFO}"
+        RUBY
+      end
+
+      it 'generates correct auto-config when Perl variable names are used' do
+        expect_offense(<<~RUBY)
+          $0
+          ^^ Prefer `$PROGRAM_NAME` over `$0`.
+        RUBY
+        expect(cop.config_to_allow_offenses).to eq('EnforcedStyle' => 'use_perl_names')
+
+        expect_correction(<<~RUBY)
+          $PROGRAM_NAME
+        RUBY
+      end
+
+      it 'generates correct auto-config when mixed styles are used' do
+        expect_offense(<<~RUBY)
+          $!; $ERROR_INFO
+          ^^ Prefer `$ERROR_INFO` from the stdlib 'English' module (don't forget to require it) over `$!`.
+        RUBY
+        expect(cop.config_to_allow_offenses).to eq('Enabled' => false)
+
+        expect_correction(<<~RUBY)
+          $ERROR_INFO; $ERROR_INFO
+        RUBY
+      end
     end
 
-    it 'registers an offense for $"' do
-      expect_offense(<<~RUBY)
-        puts $"
-             ^^ Prefer `$LOADED_FEATURES` over `$"`.
-      RUBY
+    context 'when add require English is enabled' do
+      let(:cop_config) do
+        {
+          'EnforcedStyle' => 'use_english_names',
+          'CorrecAddRequireEnglish' => true
+        }
+      end
 
-      expect_correction(<<~RUBY)
-        puts $LOADED_FEATURES
-      RUBY
-    end
+      context 'when English has not been required at top-level' do
+        it 'adds require English for $$' do
+          expect_offense(<<~RUBY)
+            puts $$
+                 ^^ Prefer `$PROCESS_ID` or `$PID` from the stdlib 'English' module (don't forget to require it) over `$$`.
+          RUBY
 
-    it 'registers an offense for $0' do
-      expect_offense(<<~RUBY)
-        puts $0
-             ^^ Prefer `$PROGRAM_NAME` over `$0`.
-      RUBY
+          expect_correction(<<~RUBY)
+            require 'English'
+            puts $PROCESS_ID
+          RUBY
+        end
 
-      expect_correction(<<~RUBY)
-        puts $PROGRAM_NAME
-      RUBY
-    end
+        it 'adds require English for $$ in nested code' do
+          expect_offense(<<~RUBY)
+            # frozen_string_literal: true
 
-    it 'registers an offense for $$' do
-      expect_offense(<<~RUBY)
-        puts $$
-             ^^ Prefer `$PROCESS_ID` or `$PID` from the stdlib 'English' module (don't forget to require it) over `$$`.
-      RUBY
+            x = true
+            if x
+              puts $$
+                   ^^ Prefer `$PROCESS_ID` or `$PID` from the stdlib 'English' module (don't forget to require it) over `$$`.
+            end
+          RUBY
 
-      expect_correction(<<~RUBY)
-        puts $PROCESS_ID
-      RUBY
-    end
+          expect_correction(<<~RUBY)
+            # frozen_string_literal: true
 
-    it 'is clear about variables from the English library vs those not' do
-      expect_offense(<<~RUBY)
-        puts $*
-             ^^ Prefer `$ARGV` from the stdlib 'English' module (don't forget to require it) or `ARGV` over `$*`.
-      RUBY
+            require 'English'
+            x = true
+            if x
+              puts $PROCESS_ID
+            end
+          RUBY
+        end
 
-      expect_correction(<<~RUBY)
-        puts $ARGV
-      RUBY
-    end
+        it 'does not add for replacement outside of English lib' do
+          expect_offense(<<~RUBY)
+            puts $0
+                 ^^ Prefer `$PROGRAM_NAME` over `$0`.
+          RUBY
 
-    it 'does not register an offense for backrefs like $1' do
-      expect_no_offenses('puts $1')
-    end
+          expect_correction(<<~RUBY)
+            puts $PROGRAM_NAME
+          RUBY
+        end
+      end
 
-    it 'auto-corrects $/ to $INPUT_RECORD_SEPARATOR' do
-      expect_offense(<<~RUBY)
-        $/
-        ^^ Prefer `$INPUT_RECORD_SEPARATOR` or `$RS` from the stdlib 'English' module (don't forget to require it) over `$/`.
-      RUBY
+      context 'when English is already required at top-level' do
+        it 'leaves require English alone for $$' do
+          expect_offense(<<~RUBY)
+            require 'English'
+            puts $$
+                 ^^ Prefer `$PROCESS_ID` or `$PID` from the stdlib 'English' module (don't forget to require it) over `$$`.
+          RUBY
 
-      expect_correction(<<~RUBY)
-        $INPUT_RECORD_SEPARATOR
-      RUBY
-    end
+          expect_correction(<<~RUBY)
+            require 'English'
+            puts $PROCESS_ID
+          RUBY
+        end
 
-    it 'auto-corrects #$: to #{$LOAD_PATH}' do
-      expect_offense(<<~'RUBY')
-        "#$:"
-          ^^ Prefer `$LOAD_PATH` over `$:`.
-      RUBY
+        it 'moves require English above replacement' do
+          expect_offense(<<~RUBY)
+            puts $$
+                 ^^ Prefer `$PROCESS_ID` or `$PID` from the stdlib 'English' module (don't forget to require it) over `$$`.
+            require 'English'
+          RUBY
 
-      expect_correction(<<~'RUBY')
-        "#{$LOAD_PATH}"
-      RUBY
-    end
-
-    it 'auto-corrects #{$!} to #{$ERROR_INFO}' do
-      expect_offense(<<~'RUBY')
-        "#{$!}"
-           ^^ Prefer `$ERROR_INFO` from the stdlib 'English' module (don't forget to require it) over `$!`.
-      RUBY
-
-      expect_correction(<<~'RUBY')
-        "#{$ERROR_INFO}"
-      RUBY
-    end
-
-    it 'generates correct auto-config when Perl variable names are used' do
-      expect_offense(<<~RUBY)
-        $0
-        ^^ Prefer `$PROGRAM_NAME` over `$0`.
-      RUBY
-      expect(cop.config_to_allow_offenses).to eq('EnforcedStyle' => 'use_perl_names')
-
-      expect_correction(<<~RUBY)
-        $PROGRAM_NAME
-      RUBY
-    end
-
-    it 'generates correct auto-config when mixed styles are used' do
-      expect_offense(<<~RUBY)
-        $!; $ERROR_INFO
-        ^^ Prefer `$ERROR_INFO` from the stdlib 'English' module (don't forget to require it) over `$!`.
-      RUBY
-      expect(cop.config_to_allow_offenses).to eq('Enabled' => false)
-
-      expect_correction(<<~RUBY)
-        $ERROR_INFO; $ERROR_INFO
-      RUBY
+          expect_correction(<<~RUBY)
+            require 'English'
+            puts $PROCESS_ID
+          RUBY
+        end
+      end
     end
   end
 
