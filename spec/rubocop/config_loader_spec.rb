@@ -540,11 +540,12 @@ RSpec.describe RuboCop::ConfigLoader do
     context 'when a department is disabled', :restore_registry do
       let(:file_path) { '.rubocop.yml' }
 
-      shared_examples 'resolves enabled/disabled for all cops' do |enabled_by_default, disabled_by_default|
+      shared_examples 'resolves enabled/disabled for all ' \
+                      'cops' do |enabled_by_default, disabled_by_default, custom_dept_to_disable|
         before { stub_cop_class('RuboCop::Cop::Foo::Bar::Baz') }
 
         it "handles EnabledByDefault: #{enabled_by_default}, " \
-           "DisabledByDefault: #{disabled_by_default}" do
+           "DisabledByDefault: #{disabled_by_default} with disabled #{custom_dept_to_disable}" do
           create_file('grandparent_rubocop.yml', <<~YAML)
             Naming/FileName:
               Enabled: pending
@@ -573,7 +574,7 @@ RSpec.describe RuboCop::ConfigLoader do
             Naming:
               Enabled: false
 
-            Foo/Bar:
+            #{custom_dept_to_disable}:
               Enabled: false
           YAML
           create_file(file_path, <<~YAML)
@@ -601,6 +602,15 @@ RSpec.describe RuboCop::ConfigLoader do
 
           def enabled?(cop)
             configuration_from_file.for_cop(cop)['Enabled']
+          end
+
+          if custom_dept_to_disable == 'Foo'
+            message = <<~'OUTPUT'.chomp
+              unrecognized cop or department Foo found in parent_rubocop.yml
+              Foo is not a department. Use `Foo/Bar`.
+            OUTPUT
+            expect { enabled?('Foo/Bar/Baz') }.to raise_error(RuboCop::ValidationError, message)
+            next
           end
 
           # Department disabled in parent config, cop enabled in child.
@@ -641,9 +651,10 @@ RSpec.describe RuboCop::ConfigLoader do
         end
       end
 
-      include_examples 'resolves enabled/disabled for all cops', false, false
-      include_examples 'resolves enabled/disabled for all cops', false, true
-      include_examples 'resolves enabled/disabled for all cops', true, false
+      include_examples 'resolves enabled/disabled for all cops', false, false, 'Foo/Bar'
+      include_examples 'resolves enabled/disabled for all cops', false, true, 'Foo/Bar'
+      include_examples 'resolves enabled/disabled for all cops', true, false, 'Foo/Bar'
+      include_examples 'resolves enabled/disabled for all cops', false, false, 'Foo'
     end
 
     context 'when a third party require defines a new gem', :restore_registry do

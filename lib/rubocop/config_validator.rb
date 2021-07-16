@@ -104,17 +104,30 @@ module RuboCop
         # to do so than to pass the value around to various methods.
         next if name == 'inherit_mode'
 
-        suggestions = NameSimilarity.find_similar_names(name, Cop::Registry.global.map(&:cop_name))
-        suggestion = "Did you mean `#{suggestions.join('`, `')}`?" if suggestions.any?
-
         message = <<~MESSAGE.rstrip
-          unrecognized cop #{name} found in #{smart_loaded_path}
-          #{suggestion}
+          unrecognized cop or department #{name} found in #{smart_loaded_path}
+          #{suggestion(name)}
         MESSAGE
 
         unknown_cops << message
       end
       raise ValidationError, unknown_cops.join("\n") if unknown_cops.any?
+    end
+
+    def suggestion(name)
+      registry = Cop::Registry.global
+      departments = registry.departments.map(&:to_s)
+      suggestions = NameSimilarity.find_similar_names(name, departments + registry.map(&:cop_name))
+      if suggestions.any?
+        "Did you mean `#{suggestions.join('`, `')}`?"
+      else
+        # Department names can contain slashes, e.g. Chef/Correctness, but there's no support for
+        # the concept of higher level departments in RuboCop. It's a flat structure. So if the user
+        # tries to configure a "top level department", we hint that it's the bottom level
+        # departments that should be configured.
+        suggestions = departments.select { |department| department.start_with?("#{name}/") }
+        "#{name} is not a department. Use `#{suggestions.join('`, `')}`." if suggestions.any?
+      end
     end
 
     def validate_syntax_cop

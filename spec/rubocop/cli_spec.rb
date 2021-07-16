@@ -1380,6 +1380,8 @@ RSpec.describe RuboCop::CLI, :isolated_environment do
         Layout/LyneLenth:
           Enabled: true
           Max: 100
+        Linth:
+          Enabled: false
         Lint/LiteralInCondition:
           Enabled: true
         Style/AlignHash:
@@ -1389,11 +1391,13 @@ RSpec.describe RuboCop::CLI, :isolated_environment do
       expect(cli.run(%w[--format simple example])).to eq(2)
       expect($stderr.string)
         .to eq(<<~OUTPUT)
-          Error: unrecognized cop Layout/LyneLenth found in example/.rubocop.yml
+          Error: unrecognized cop or department Layout/LyneLenth found in example/.rubocop.yml
           Did you mean `Layout/LineLength`?
-          unrecognized cop Lint/LiteralInCondition found in example/.rubocop.yml
+          unrecognized cop or department Linth found in example/.rubocop.yml
+          Did you mean `Lint`?
+          unrecognized cop or department Lint/LiteralInCondition found in example/.rubocop.yml
           Did you mean `Lint/LiteralAsCondition`?
-          unrecognized cop Style/AlignHash found in example/.rubocop.yml
+          unrecognized cop or department Style/AlignHash found in example/.rubocop.yml
           Did you mean `Style/Alias`, `Style/OptionHash`?
         OUTPUT
     end
@@ -1688,7 +1692,7 @@ RSpec.describe RuboCop::CLI, :isolated_environment do
         YAML
         expect(cli.run(['example1.rb'])).to eq(2)
         expect($stderr.string.strip).to eq(
-          'Error: unrecognized cop Syntax/Whatever found in .rubocop.yml'
+          'Error: unrecognized cop or department Syntax/Whatever found in .rubocop.yml'
         )
       end
     end

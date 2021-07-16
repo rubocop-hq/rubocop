@@ -31,7 +31,7 @@ RSpec.describe RuboCop::Config do
       it 'raises an validation error' do
         expect { configuration }.to raise_error(
           RuboCop::ValidationError,
-          'unrecognized cop LyneLenth found in .rubocop.yml'
+          'unrecognized cop or department LyneLenth found in .rubocop.yml'
         )
       end
     end
