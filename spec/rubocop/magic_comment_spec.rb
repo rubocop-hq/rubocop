@@ -4,6 +4,7 @@ RSpec.describe RuboCop::MagicComment do
   shared_examples 'magic comment' do |comment, expectations = {}|
     encoding = expectations[:encoding]
     frozen_string = expectations[:frozen_string_literal]
+    shareable_constant_value = expectations[:shareable_constant_value]
 
     it "returns #{encoding.inspect} for encoding when comment is #{comment}" do
       expect(described_class.parse(comment).encoding).to eql(encoding)
@@ -11,6 +12,12 @@ RSpec.describe RuboCop::MagicComment do
 
     it "returns #{frozen_string.inspect} for frozen_string_literal when comment is #{comment}" do
       expect(described_class.parse(comment).frozen_string_literal).to eql(frozen_string)
+    end
+
+    it "returns #{shareable_constant_value.inspect} for shareable_constant_value " \
+         "when comment is #{comment}" do
+      expect(described_class.parse(comment).shareable_constant_value)
+        .to eql(shareable_constant_value)
     end
   end
 
@@ -47,22 +54,37 @@ RSpec.describe RuboCop::MagicComment do
   include_examples 'magic comment', '# fRoZeN-sTrInG_lItErAl: true', frozen_string_literal: true
 
   include_examples 'magic comment',
+                   '# shareable_constant_value: none',
+                   shareable_constant_value: nil
+
+  include_examples 'magic comment',
+                   '# shareable_constant_value: literal',
+                   shareable_constant_value: :literal
+
+  include_examples 'magic comment',
+                   '# shareable_constant_value: experimental_everything',
+                   shareable_constant_value: :experimental_everything
+
+  include_examples 'magic comment',
+                   '# shareable_constant_value: experimental_copy',
+                   shareable_constant_value: :experimental_copy
+
+  include_examples 'magic comment',
                    '# -*- frozen-string-literal: true -*-',
                    frozen_string_literal: true
 
   include_examples 'magic comment',
-                   '# frozen_string_literal: invalid',
-                   frozen_string_literal: 'invalid'
-
-  include_examples 'magic comment',
                    '# -*- encoding : ascii-8bit -*-',
                    encoding: 'ascii-8bit',
-                   frozen_string_literal: nil
+                   frozen_string_literal: nil,
+                   shareable_constant_value: nil
 
   include_examples 'magic comment',
-                   '# encoding: ascii-8bit frozen_string_literal: true',
+                   '# encoding: ascii-8bit frozen_string_literal: true ' \
+                   'shareable_constant_value: literal',
                    encoding: 'ascii-8bit',
-                   frozen_string_literal: nil
+                   frozen_string_literal: nil,
+                   shareable_constant_value: nil
 
   include_examples 'magic comment',
                    '# frozen_string_literal: true encoding: ascii-8bit',
@@ -76,23 +98,29 @@ RSpec.describe RuboCop::MagicComment do
 
   include_examples(
     'magic comment',
-    '# -*- encoding: ASCII-8BIT; frozen_string_literal: true -*-',
+    '# -*- encoding: ASCII-8BIT; frozen_string_literal: true; ' \
+    'shareable_constant_value: literal -*-',
     encoding: 'ascii-8bit',
-    frozen_string_literal: true
+    frozen_string_literal: true,
+    shareable_constant_value: :literal
   )
 
   include_examples(
     'magic comment',
-    '# coding: utf-8 -*- encoding: ASCII-8BIT; frozen_string_literal: true -*-',
+    '# coding: utf-8 -*- encoding: ASCII-8BIT; frozen_string_literal: true; ' \
+    'shareable_constant_value: literal -*-',
     encoding: 'ascii-8bit',
-    frozen_string_literal: true
+    frozen_string_literal: true,
+    shareable_constant_value: :literal
   )
 
   include_examples(
     'magic comment',
-    '# -*- coding: ASCII-8BIT; frozen_string_literal: true -*-',
+    '# -*- coding: ASCII-8BIT; frozen_string_literal: true; ' \
+    'shareable_constant_value: literal -*-',
     encoding: 'ascii-8bit',
-    frozen_string_literal: true
+    frozen_string_literal: true,
+    shareable_constant_value: :literal
   )
 
   include_examples 'magic comment',

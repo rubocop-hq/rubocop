@@ -84,7 +84,13 @@ module RuboCop
     #
     # @return [String] for shareable_constant_value config
     def shareable_constant_value
-      extract_shareable_constant_value
+      return unless (setting = extract_shareable_constant_value)
+
+      case setting
+      when 'none' then nil
+      else
+        setting.to_sym
+      end
     end
 
     def encoding_specified?
@@ -166,7 +172,7 @@ module RuboCop
       end
 
       def extract_shareable_constant_value
-        match('shareable[_-]constant[_-]values')
+        match('shareable[_-]constant[_-]value')
       end
     end
 

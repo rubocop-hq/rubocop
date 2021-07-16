@@ -157,6 +157,61 @@ RSpec.describe RuboCop::Cop::Style::MutableConstant, :config do
           RUBY
         end
       end
+
+      context 'when using shareable_constant_value: literal' do
+        let(:prefix) { '# shareable_constant_value: literal' }
+
+        it_behaves_like 'immutable objects', '[1, 2, 3]'
+        it_behaves_like 'immutable objects', '%w(a b c)'
+        it_behaves_like 'immutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'immutable objects', "'str'"
+        it_behaves_like 'immutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', 'FOO + BAR'
+        it_behaves_like 'immutable objects', 'FOO - BAR'
+        it_behaves_like 'immutable objects', "'foo' + 'bar'"
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+      end
+
+      context 'when using shareable_constant_value: experimental_everything' do
+        let(:prefix) { '# shareable_constant_value: experimental_everything' }
+
+        it_behaves_like 'immutable objects', '[1, 2, 3]'
+        it_behaves_like 'immutable objects', '%w(a b c)'
+        it_behaves_like 'immutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'immutable objects', "'str'"
+        it_behaves_like 'immutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', 'FOO + BAR'
+        it_behaves_like 'immutable objects', 'FOO - BAR'
+        it_behaves_like 'immutable objects', "'foo' + 'bar'"
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+      end
+
+      context 'when using shareable_constant_value: none' do
+        let(:prefix) { '# shareable_constant_value: none' }
+
+        it_behaves_like 'mutable objects', '[1, 2, 3]'
+        it_behaves_like 'mutable objects', '%w(a b c)'
+        it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'mutable objects', "'str'"
+        it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', 'FOO + BAR'
+        it_behaves_like 'immutable objects', 'FOO - BAR'
+        it_behaves_like 'immutable objects', "'foo' + 'bar'"
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+      end
     end
 
     context 'Ruby 2.7 or lower', :ruby27 do
@@ -219,6 +274,44 @@ RSpec.describe RuboCop::Cop::Style::MutableConstant, :config do
             XXX = (1...99).freeze
           RUBY
         end
+      end
+
+      context 'when using shareable_constant_value: literal' do
+        let(:prefix) { '# shareable_constant_value: literal' }
+
+        it_behaves_like 'mutable objects', '[1, 2, 3]'
+        it_behaves_like 'mutable objects', '%w(a b c)'
+        it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'mutable objects', "'str'"
+        it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', 'FOO + BAR'
+        it_behaves_like 'immutable objects', 'FOO - BAR'
+        it_behaves_like 'immutable objects', "'foo' + 'bar'"
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+      end
+
+      context 'when using shareable_constant_value: experimental_everything' do
+        let(:prefix) { '# shareable_constant_value: experimental_everything' }
+
+        it_behaves_like 'mutable objects', '[1, 2, 3]'
+        it_behaves_like 'mutable objects', '%w(a b c)'
+        it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'mutable objects', "'str'"
+        it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', 'FOO + BAR'
+        it_behaves_like 'immutable objects', 'FOO - BAR'
+        it_behaves_like 'immutable objects', "'foo' + 'bar'"
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
       end
     end
 
@@ -500,6 +593,163 @@ RSpec.describe RuboCop::Cop::Style::MutableConstant, :config do
       let(:prefix) { '# frozen_string_literal: false' }
 
       it_behaves_like 'mutable objects', '"#{a}"'
+    end
+
+    context 'Ruby 3.0 or higher', :ruby30 do
+      context 'when using shareable_constant_value: literal' do
+        let(:prefix) { '# shareable_constant_value: literal' }
+
+        it_behaves_like 'immutable objects', '[1, 2, 3]'
+        it_behaves_like 'immutable objects', '%w(a b c)'
+        it_behaves_like 'immutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'immutable objects', "'str'"
+        it_behaves_like 'immutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'immutable objects', 'Something.new'
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+        it_behaves_like 'immutable objects', 'OTHER_CONST'
+        it_behaves_like 'immutable objects', '::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', '::Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Struct.new'
+        it_behaves_like 'immutable objects', '::Struct.new'
+        it_behaves_like 'immutable objects', 'Struct.new(:a, :b)'
+        it_behaves_like 'immutable objects', <<~RUBY
+          Struct.new(:node) do
+            def assignment?
+              true
+            end
+          end
+        RUBY
+      end
+
+      context 'when using shareable_constant_value: experimental_everything' do
+        let(:prefix) { '# shareable_constant_value: experimental_everything' }
+
+        it_behaves_like 'immutable objects', '[1, 2, 3]'
+        it_behaves_like 'immutable objects', '%w(a b c)'
+        it_behaves_like 'immutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'immutable objects', "'str'"
+        it_behaves_like 'immutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'immutable objects', 'Something.new'
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+        it_behaves_like 'immutable objects', 'OTHER_CONST'
+        it_behaves_like 'immutable objects', '::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', '::Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Struct.new'
+        it_behaves_like 'immutable objects', '::Struct.new'
+        it_behaves_like 'immutable objects', 'Struct.new(:a, :b)'
+        it_behaves_like 'immutable objects', <<~RUBY
+          Struct.new(:node) do
+            def assignment?
+              true
+            end
+          end
+        RUBY
+      end
+
+      context 'when using shareable_constant_value: none' do
+        let(:prefix) { '# shareable_constant_value: none' }
+
+        it_behaves_like 'mutable objects', '[1, 2, 3]'
+        it_behaves_like 'mutable objects', '%w(a b c)'
+        it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'mutable objects', "'str'"
+        it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'mutable objects', 'Something.new'
+
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+        it_behaves_like 'immutable objects', 'OTHER_CONST'
+        it_behaves_like 'immutable objects', '::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', '::Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Struct.new'
+        it_behaves_like 'immutable objects', '::Struct.new'
+        it_behaves_like 'immutable objects', 'Struct.new(:a, :b)'
+        it_behaves_like 'immutable objects', <<~RUBY
+          Struct.new(:node) do
+            def assignment?
+              true
+            end
+          end
+        RUBY
+      end
+    end
+
+    context 'Ruby 2.7 or lower', :ruby27 do
+      context 'when using shareable_constant_value: literal' do
+        let(:prefix) { '# shareable_constant_value: literal' }
+
+        it_behaves_like 'mutable objects', '[1, 2, 3]'
+        it_behaves_like 'mutable objects', '%w(a b c)'
+        it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'mutable objects', "'str'"
+        it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'mutable objects', 'Something.new'
+
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+        it_behaves_like 'immutable objects', 'OTHER_CONST'
+        it_behaves_like 'immutable objects', '::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', '::Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Struct.new'
+        it_behaves_like 'immutable objects', '::Struct.new'
+        it_behaves_like 'immutable objects', 'Struct.new(:a, :b)'
+        it_behaves_like 'immutable objects', <<~RUBY
+          Struct.new(:node) do
+            def assignment?
+              true
+            end
+          end
+        RUBY
+      end
+
+      context 'when using shareable_constant_value: experimental_everything' do
+        let(:prefix) { '# shareable_constant_value: experimental_everything' }
+
+        it_behaves_like 'mutable objects', '[1, 2, 3]'
+        it_behaves_like 'mutable objects', '%w(a b c)'
+        it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+        it_behaves_like 'mutable objects', "'str'"
+        it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+        it_behaves_like 'mutable objects', 'Something.new'
+
+        it_behaves_like 'immutable objects', '1'
+        it_behaves_like 'immutable objects', '1.5'
+        it_behaves_like 'immutable objects', ':sym'
+        it_behaves_like 'immutable objects', "ENV['foo']"
+        it_behaves_like 'immutable objects', "::ENV['foo']"
+        it_behaves_like 'immutable objects', 'OTHER_CONST'
+        it_behaves_like 'immutable objects', '::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', '::Namespace::OTHER_CONST'
+        it_behaves_like 'immutable objects', 'Struct.new'
+        it_behaves_like 'immutable objects', '::Struct.new'
+        it_behaves_like 'immutable objects', 'Struct.new(:a, :b)'
+        it_behaves_like 'immutable objects', <<~RUBY
+          Struct.new(:node) do
+            def assignment?
+              true
+            end
+          end
+        RUBY
+      end
     end
   end
 end

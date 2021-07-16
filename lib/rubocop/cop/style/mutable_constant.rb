@@ -54,6 +54,7 @@ module RuboCop
       #   end.freeze
       class MutableConstant < Base
         include FrozenStringLiteral
+        include ShareableConstantValue
         include ConfigurableEnforcedStyle
         extend AutoCorrector
 
@@ -82,6 +83,7 @@ module RuboCop
         end
 
         def strict_check(value)
+          return if shareable_constant_value?
           return if immutable_literal?(value)
           return if operation_produces_immutable_object?(value)
           return if frozen_string_literal?(value)
@@ -90,6 +92,8 @@ module RuboCop
         end
 
         def check(value)
+          return if shareable_constant_value?
+
           range_enclosed_in_parentheses = range_enclosed_in_parentheses?(value)
 
           return unless mutable_literal?(value) ||
