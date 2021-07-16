@@ -124,6 +124,48 @@ RSpec.describe RuboCop::Cop::Style::HashSyntax, :config do
         end
       end
 
+      context 'if PreferHashRocketsForQuotedSymbols is true' do
+        let(:cop_config_overrides) { { 'PreferHashRocketsForQuotedSymbols' => true } }
+
+        it 'accepts hash rockets when key is double quoted symbol' do
+          expect_no_offenses('x = { :"fancy symbol" => 0 }')
+        end
+
+        it 'accepts hash rockets when key is single quoted symbol' do
+          expect_no_offenses("x = { :'fancy symbol' => 0 }")
+        end
+
+        it 'accepts hash rockets when a key is quoted symbol containing no special characters' do
+          expect_no_offenses("x = { :'needlessly_quoted_symbol' => 0, :simple_symbol => 1 }")
+        end
+
+        it 'accepts hash rockets when a key is quoted symbol containing interpolation' do
+          expect_no_offenses('x = { :"#{interpolation}" => 0, :simple_symbol => 1}')
+        end
+
+        it 'registers an offense when new syntax is used and key is double quoted symbol' do
+          expect_offense(<<~RUBY)
+            x = { "fancy symbol": 0 }'
+                  ^^^^^^^^^^^^^^^ Use hash rockets syntax.
+          RUBY
+
+          expect_correction(<<~RUBY)
+            x = { :"fancy symbol" => 0 }'
+          RUBY
+        end
+
+        it 'registers an offense when new syntax is used and key is single quoted symbol' do
+          expect_offense(<<~RUBY)
+            x = { 'fancy symbol': 0 }'
+                  ^^^^^^^^^^^^^^^ Use hash rockets syntax.
+          RUBY
+
+          expect_correction(<<~RUBY)
+            x = { :'fancy symbol' => 0 }'
+          RUBY
+        end
+      end
+
       it 'accepts hash rockets when symbol keys end with =' do
         expect_no_offenses('x = { :a= => 0 }')
       end
@@ -646,6 +688,77 @@ RSpec.describe RuboCop::Cop::Style::HashSyntax, :config do
         expect_no_offenses('{"#{foo}": 1, "#{@foo}": 2, "#@foo": 3}')
       end
     end
+
+    context 'if PreferHashRocketsForQuotedSymbols is true' do
+      let(:cop_config_overrides) do
+        {
+          'EnforcedStyle' => 'ruby19_no_mixed_keys',
+          'PreferHashRocketsForQuotedSymbols' => true,
+        }
+      end
+
+      it 'accepts hash rockets when a key is double quoted symbol' do
+        expect_no_offenses('x = { :"fancy symbol" => 0, :simple_symbol => 1}')
+      end
+
+      it 'accepts hash rockets when a key is single quoted symbol' do
+        expect_no_offenses("x = { :'fancy symbol' => 0, :simple_symbol => 1 }")
+      end
+
+      it 'accepts hash rockets when a key is quoted symbol containing no special characters' do
+        expect_no_offenses("x = { :'needlessly_quoted_symbol' => 0, :simple_symbol => 1 }")
+      end
+
+      it 'accepts hash rockets when a key is quoted symbol containing interpolation' do
+        expect_no_offenses('x = { :"#{interpolation}" => 0, :simple_symbol => 1}')
+      end
+
+      it 'registers an offense when new syntax is used and key is double quoted symbol' do
+        expect_offense(<<~RUBY)
+          x = { "fancy symbol": 0, simple_symbol: 1 }
+                ^^^^^^^^^^^^^^^ Use hash rockets syntax.
+                                   ^^^^^^^^^^^^^^ Use hash rockets syntax.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          x = { :"fancy symbol" => 0, :simple_symbol => 1 }
+        RUBY
+      end
+
+      it 'registers an offense when new syntax is used and key is single quoted symbol' do
+        expect_offense(<<~RUBY)
+          x = { 'fancy symbol': 0, simple_symbol: 1 }
+                ^^^^^^^^^^^^^^^ Use hash rockets syntax.
+                                   ^^^^^^^^^^^^^^ Use hash rockets syntax.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          x = { :'fancy symbol' => 0, :simple_symbol => 1 }
+        RUBY
+      end
+
+      it 'registers an offense when mixed syntax is used and key is double quoted symbol' do
+        expect_offense(<<~RUBY)
+          x = { :"fancy symbol" => 0, simple_symbol: 1 }
+                                      ^^^^^^^^^^^^^^ Use hash rockets syntax.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          x = { :"fancy symbol" => 0, :simple_symbol => 1 }
+        RUBY
+      end
+
+      it 'registers an offense when mixed syntax is used and key is single quoted symbol' do
+        expect_offense(<<~RUBY)
+          x = { :'fancy symbol' => 0, simple_symbol: 1 }
+                                      ^^^^^^^^^^^^^^ Use hash rockets syntax.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          x = { :'fancy symbol' => 0, :simple_symbol => 1 }
+        RUBY
+      end
+    end
   end
 
   context 'configured to enforce no mixed keys' do
@@ -762,3 +875,5 @@ RSpec.describe RuboCop::Cop::Style::HashSyntax, :config do
     end
   end
 end
+
+# TODO: Add autocorrect specs

@@ -54,6 +54,8 @@ module RuboCop
       #   # good
       #   {a: 1, b: 2}
       #   {:c => 3, 'd' => 4}
+      #
+      # TODO: Add to docs
       class HashSyntax < Base
         include ConfigurableEnforcedStyle
         include RangeHelp
@@ -144,6 +146,12 @@ module RuboCop
              # similarly for other non-alnum final characters (except quotes,
              # to prefer { "x y": 1 } over { :"x y" => 1 }).
              !/[\p{Alnum}"']\z/.match?(sym_name)
+            return false
+          end
+
+          if cop_config['PreferHashRocketsForQuotedSymbols'] &&
+              # Prefer { :"x y" => 1 } over { "x y": 1 }.
+              /\A['"]|['"]\z/.match?(sym_name)
             return false
           end
 
