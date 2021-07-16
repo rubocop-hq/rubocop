@@ -43,6 +43,43 @@ RSpec.describe RuboCop::Cop::Style::MutableConstant, :config do
     end
   end
 
+  shared_examples 'literals that are frozen' do |o|
+    let(:prefix) { o }
+
+    it_behaves_like 'immutable objects', '[1, 2, 3]'
+    it_behaves_like 'immutable objects', '%w(a b c)'
+    it_behaves_like 'immutable objects', '{ a: 1, b: 2 }'
+    it_behaves_like 'immutable objects', "'str'"
+    it_behaves_like 'immutable objects', '"top#{1 + 2}"'
+    it_behaves_like 'immutable objects', '1'
+    it_behaves_like 'immutable objects', '1.5'
+    it_behaves_like 'immutable objects', ':sym'
+    it_behaves_like 'immutable objects', 'FOO + BAR'
+    it_behaves_like 'immutable objects', 'FOO - BAR'
+    it_behaves_like 'immutable objects', "'foo' + 'bar'"
+    it_behaves_like 'immutable objects', "ENV['foo']"
+    it_behaves_like 'immutable objects', "::ENV['foo']"
+  end
+
+  shared_examples 'literals that are not frozen' do |o|
+    let(:prefix) { o }
+
+    it_behaves_like 'mutable objects', '[1, 2, 3]'
+    it_behaves_like 'mutable objects', '%w(a b c)'
+    it_behaves_like 'mutable objects', '{ a: 1, b: 2 }'
+    it_behaves_like 'mutable objects', "'str'"
+    it_behaves_like 'mutable objects', '"top#{1 + 2}"'
+
+    it_behaves_like 'immutable objects', '1'
+    it_behaves_like 'immutable objects', '1.5'
+    it_behaves_like 'immutable objects', ':sym'
+    it_behaves_like 'immutable objects', 'FOO + BAR'
+    it_behaves_like 'immutable objects', 'FOO - BAR'
+    it_behaves_like 'immutable objects', "'foo' + 'bar'"
+    it_behaves_like 'immutable objects', "ENV['foo']"
+    it_behaves_like 'immutable objects', "::ENV['foo']"
+  end
+
   context 'Strict: false' do
     let(:cop_config) { { 'EnforcedStyle' => 'literals' } }
 
@@ -157,6 +194,34 @@ RSpec.describe RuboCop::Cop::Style::MutableConstant, :config do
           RUBY
         end
       end
+
+      context 'when using shareable_constant_value' do
+        it_behaves_like 'literals that are frozen', '# shareable_constant_value: literal'
+        it_behaves_like 'literals that are frozen', '# shareable_constant_value: experimental_everything'
+        it_behaves_like 'literals that are frozen', '# shareable_constant_value: experimental_copy'
+        it_behaves_like 'literals that are not frozen', '# shareable_constant_value: none'
+      end
+
+      it 'raises offense when shareable_constant_value is specified as an inline comment' do
+        expect_offense(<<~RUBY)
+          X = [1, 2, 3] # shareable_constant_value: literal
+              ^^^^^^^^^ Freeze mutable objects assigned to constants.
+          Y = [4, 5, 6]
+              ^^^^^^^^^ Freeze mutable objects assigned to constants.
+        RUBY
+      end
+
+      it 'raises offense only for shareable_constant_value as none when set in the order of: literal, none and experimental_everything' do
+        expect_offense(<<~RUBY)
+          # shareable_constant_value: literal
+          X = [1, 2, 3]
+          # shareable_constant_value: none
+          Y = [4, 5, 6]
+              ^^^^^^^^^ Freeze mutable objects assigned to constants.
+          # shareable_constant_value: experimental_everything
+          Z = [7, 8, 9]
+        RUBY
+      end
     end
 
     context 'Ruby 2.7 or lower', :ruby27 do
@@ -219,6 +284,13 @@ RSpec.describe RuboCop::Cop::Style::MutableConstant, :config do
             XXX = (1...99).freeze
           RUBY
         end
+      end
+
+      context 'when using shareable_constant_values' do
+        it_behaves_like 'literals that are not frozen', '# shareable_constant_value: literal'
+        it_behaves_like 'literals that are not frozen', '# shareable_constant_value: experimental_everything'
+        it_behaves_like 'literals that are not frozen', '# shareable_constant_value: experimental_copy'
+        it_behaves_like 'literals that are not frozen', '# shareable_constant_value: none'
       end
     end
 

@@ -4,6 +4,7 @@ RSpec.describe RuboCop::MagicComment do
   shared_examples 'magic comment' do |comment, expectations = {}|
     encoding = expectations[:encoding]
     frozen_string = expectations[:frozen_string_literal]
+    shareable_constant_value = expectations[:shareable_constant_value]
 
     it "returns #{encoding.inspect} for encoding when comment is #{comment}" do
       expect(described_class.parse(comment).encoding).to eql(encoding)
@@ -11,6 +12,12 @@ RSpec.describe RuboCop::MagicComment do
 
     it "returns #{frozen_string.inspect} for frozen_string_literal when comment is #{comment}" do
       expect(described_class.parse(comment).frozen_string_literal).to eql(frozen_string)
+    end
+
+    it "returns #{shareable_constant_value.inspect} for shareable_constant_value " \
+       "when comment is #{comment}" do
+      expect(described_class.parse(comment)
+                            .shareable_constant_value).to eql(shareable_constant_value)
     end
   end
 
@@ -45,6 +52,34 @@ RSpec.describe RuboCop::MagicComment do
   include_examples 'magic comment', '# FROZEN-STRING-LITERAL: true', frozen_string_literal: true
 
   include_examples 'magic comment', '# fRoZeN-sTrInG_lItErAl: true', frozen_string_literal: true
+
+  include_examples 'magic comment', '# shareable_constant_value: literal', shareable_constant_value: 'literal'
+
+  include_examples 'magic comment', '# shareable_constant_value:literal', shareable_constant_value: 'literal'
+
+  include_examples 'magic comment', '# shareable-constant-value: literal', shareable_constant_value: 'literal'
+
+  include_examples 'magic comment', '# SHAREABLE-CONSTANT-VALUE: literal', shareable_constant_value: 'literal'
+
+  include_examples 'magic comment', '# sHaReaBLE-CoNstANT-ValUE: literal', shareable_constant_value: 'literal'
+
+  include_examples 'magic comment', '# shareable_constant_value: none', shareable_constant_value: 'none'
+
+  include_examples 'magic comment', '# xyz shareable_constant_value: literal'
+
+  include_examples 'magic comment', '# xyz shareable_constant_value: literal xyz'
+
+  include_examples(
+    'magic comment',
+    '# shareable_constant_value: experimental_everything',
+    shareable_constant_value: 'experimental_everything'
+  )
+
+  include_examples(
+    'magic comment',
+    '# shareable_constant_value: experimental_copy',
+    shareable_constant_value: 'experimental_copy'
+  )
 
   include_examples 'magic comment',
                    '# -*- frozen-string-literal: true -*-',

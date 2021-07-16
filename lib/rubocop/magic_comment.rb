@@ -166,7 +166,7 @@ module RuboCop
       end
 
       def extract_shareable_constant_value
-        match('shareable[_-]constant[_-]values')
+        match('shareable[_-]constant[_-]value')
       end
     end
 

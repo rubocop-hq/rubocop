@@ -53,6 +53,7 @@ module RuboCop
       #     end
       #   end.freeze
       class MutableConstant < Base
+        include ShareableConstantValue
         include FrozenStringLiteral
         include ConfigurableEnforcedStyle
         extend AutoCorrector
@@ -85,18 +86,18 @@ module RuboCop
           return if immutable_literal?(value)
           return if operation_produces_immutable_object?(value)
           return if frozen_string_literal?(value)
+          return if shareable_constant_value?(value)
 
           add_offense(value) { |corrector| autocorrect(corrector, value) }
         end
 
         def check(value)
           range_enclosed_in_parentheses = range_enclosed_in_parentheses?(value)
-
           return unless mutable_literal?(value) ||
                         target_ruby_version <= 2.7 && range_enclosed_in_parentheses
-
           return if FROZEN_STRING_LITERAL_TYPES.include?(value.type) &&
                     frozen_string_literals_enabled?
+          return if shareable_constant_value?(value)
 
           add_offense(value) { |corrector| autocorrect(corrector, value) }
         end
@@ -128,6 +129,12 @@ module RuboCop
 
         def frozen_string_literal?(node)
           FROZEN_STRING_LITERAL_TYPES.include?(node.type) && frozen_string_literals_enabled?
+        end
+
+        def shareable_constant_value?(node)
+          return false if target_ruby_version < 3.0
+
+          recent_shareable_value? node
         end
 
         def frozen_regexp_or_range_literals?(node)
