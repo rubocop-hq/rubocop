@@ -65,6 +65,36 @@ RSpec.describe RuboCop::Cop::Lint::DuplicateBranch, :config do
     end
   end
 
+  shared_examples_for 'literal case-match allowed' do |type, value|
+    context "when returning a #{type} in multiple branches", :ruby27 do
+      it 'allows branches to be duplicated' do
+        expect_no_offenses(<<~RUBY)
+          case foo
+          in x then #{value}
+          in y then #{value}
+          else #{value}
+          end
+        RUBY
+      end
+    end
+  end
+
+  shared_examples_for 'literal case-match disallowed' do |type, value|
+    context "when returning a #{type} in multiple branches", :ruby27 do
+      it 'registers an offense' do
+        expect_offense(<<~RUBY, value: value)
+          case foo
+          in x then #{value}
+          in y then #{value}
+          ^^^^^^^^^^^{value} Duplicate branch body detected.
+          else #{value}
+          ^^^^ Duplicate branch body detected.
+          end
+        RUBY
+      end
+    end
+  end
+
   shared_examples_for 'literal rescue allowed' do |type, value|
     context "when returning a #{type} in multiple branches" do
       it 'allows branches to be duplicated' do
@@ -400,7 +430,7 @@ RSpec.describe RuboCop::Cop::Lint::DuplicateBranch, :config do
   context 'with IgnoreConstantBranches: true' do
     let(:cop_config) { { 'IgnoreConstantBranches' => true } }
 
-    %w[if case rescue].each do |keyword|
+    %w[if case case-match rescue].each do |keyword|
       context "with `#{keyword}`" do
         it_behaves_like "literal #{keyword} allowed", 'constant', 'MY_CONST'
 

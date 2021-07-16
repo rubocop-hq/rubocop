@@ -4,7 +4,7 @@ module RuboCop
   module Cop
     module Lint
       # This cop checks that there are no repeated bodies
-      # within `if/unless`, `case-when` and `rescue` constructs.
+      # within `if/unless`, `case-when`, `case-in` and `rescue` constructs.
       #
       # With `IgnoreLiteralBranches: true`, branches are not registered
       # as offenses if they return a basic literal value (string, symbol,
@@ -97,6 +97,7 @@ module RuboCop
         end
         alias on_if on_branching_statement
         alias on_case on_branching_statement
+        alias on_case_match on_branching_statement
         alias on_rescue on_branching_statement
 
         private
