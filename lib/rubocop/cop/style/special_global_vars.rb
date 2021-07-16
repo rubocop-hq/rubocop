@@ -5,9 +5,14 @@ module RuboCop
     module Style
       #
       # This cop looks for uses of Perl-style global variables.
+      # Correcting to global variables in the 'English' library
+      # will add a require statement to the top of the file if
+      # enabled by CorrectAddRequireEnglish config.
       #
       # @example EnforcedStyle: use_english_names (default)
       #   # good
+      #   require 'English' # or this could be in another file.
+      #
       #   puts $LOAD_PATH
       #   puts $LOADED_FEATURES
       #   puts $PROGRAM_NAME
@@ -50,6 +55,8 @@ module RuboCop
       #
       class SpecialGlobalVars < Base
         include ConfigurableEnforcedStyle
+        include RangeHelp
+        include RequireLibrary
         extend AutoCorrector
 
         MSG_BOTH = 'Prefer `%<prefer>s` from the stdlib \'English\' ' \
@@ -90,6 +97,8 @@ module RuboCop
         # Anything *not* in this set is provided by the English library.
         NON_ENGLISH_VARS = Set.new(%i[$LOAD_PATH $LOADED_FEATURES $PROGRAM_NAME ARGV]).freeze
 
+        LIBRARY_NAME = 'English'
+
         def on_gvar(node)
           global_var, = *node
 
@@ -116,6 +125,8 @@ module RuboCop
 
         def autocorrect(corrector, node, global_var)
           node = node.parent while node.parent&.begin_type? && node.parent.children.one?
+
+          ensure_required(corrector, node, LIBRARY_NAME) if should_require_english?(global_var)
 
           corrector.replace(node, replacement(node, global_var))
         end
@@ -171,6 +182,16 @@ module RuboCop
           return "\#{#{preferred_name}}" if node.begin_type?
 
           "{#{preferred_name}}"
+        end
+
+        def add_require_english?
+          cop_config['CorrecAddRequireEnglish']
+        end
+
+        def should_require_english?(global_var)
+          style == :use_english_names &&
+            add_require_english? &&
+            !NON_ENGLISH_VARS.include?(preferred_names(global_var).first)
         end
       end
     end

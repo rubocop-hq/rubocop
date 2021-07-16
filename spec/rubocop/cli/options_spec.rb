@@ -1800,6 +1800,7 @@ RSpec.describe 'RuboCop::CLI options', :isolated_environment do # rubocop:disabl
 
         1 file inspected, 1 offense detected, 1 offense corrected
         ====================
+        require 'English'
         p $INPUT_RECORD_SEPARATOR
       RESULT
     ensure
@@ -1823,6 +1824,7 @@ RSpec.describe 'RuboCop::CLI options', :isolated_environment do # rubocop:disabl
         ====================
       RESULT
       expect($stdout.string).to eq(<<~RESULT.chomp)
+        require 'English'
         p $INPUT_RECORD_SEPARATOR
       RESULT
     ensure

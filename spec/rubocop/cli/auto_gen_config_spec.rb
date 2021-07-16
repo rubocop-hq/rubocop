@@ -1140,7 +1140,7 @@ RSpec.describe 'RuboCop::CLI --auto-gen-config', :isolated_environment do # rubo
 
             # Offense count: 2
             # Cop supports --auto-correct.
-            # Configuration parameters: EnforcedStyle.
+            # Configuration parameters: CorrecAddRequireEnglish, EnforcedStyle.
             # SupportedStyles: use_perl_names, use_english_names
             Style/SpecialGlobalVars:
               Enabled: false
@@ -1165,7 +1165,7 @@ RSpec.describe 'RuboCop::CLI --auto-gen-config', :isolated_environment do # rubo
 
             # Offense count: 3
             # Cop supports --auto-correct.
-            # Configuration parameters: EnforcedStyle.
+            # Configuration parameters: CorrecAddRequireEnglish, EnforcedStyle.
             # SupportedStyles: use_perl_names, use_english_names
             Style/SpecialGlobalVars:
               Exclude:

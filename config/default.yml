@@ -4575,6 +4575,7 @@ Style/SpecialGlobalVars:
   VersionAdded: '0.13'
   VersionChanged: '0.36'
   SafeAutoCorrect: false
+  CorrecAddRequireEnglish: true
   EnforcedStyle: use_english_names
   SupportedStyles:
     - use_perl_names
