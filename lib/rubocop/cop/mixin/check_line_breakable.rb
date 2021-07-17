@@ -97,9 +97,9 @@ module RuboCop
       # If a send node contains a heredoc argument, splitting cannot happen
       # after the heredoc or else it will cause a syntax error.
       def shift_elements_for_heredoc_arg(node, elements, index)
-        return index unless node.send_type?
+        return index unless node.send_type? || node.array_type?
 
-        heredoc_index = elements.index { |arg| (arg.str_type? || arg.dstr_type?) && arg.heredoc? }
+        heredoc_index = elements.index { |arg| arg.respond_to?(:heredoc?) && arg.heredoc? }
         return index unless heredoc_index
         return nil if heredoc_index.zero?
 

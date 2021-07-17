@@ -779,6 +779,16 @@ RSpec.describe RuboCop::Cop::Layout::LineLength, :config do
           expect_no_corrections
         end
 
+        it 'does not break up the line when a heredoc is used as the first element of an array' do
+          expect_offense(<<~RUBY)
+            [<<~STRING, { key1: value1, key2: value2 }]
+                                                    ^^^ Line is too long. [43/40]
+            STRING
+          RUBY
+
+          expect_no_corrections
+        end
+
         context 'and other arguments before the heredoc' do
           it 'can break up the line before the heredoc argument' do
             args = 'x' * 20
