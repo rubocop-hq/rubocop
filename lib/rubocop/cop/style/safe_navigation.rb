@@ -171,14 +171,26 @@ module RuboCop
           end
         end
 
-        def on_and(node) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
-          collect_and_clauses(node).each do |(lhs, lhs_operator_range), (rhs, _rhs_operator_range)|
+        def on_and(node) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+          collect_and_clauses(node).each do |(lhs, lhs_operator_range), (rhs, _rhs_operator_range)| # rubocop:disable Metrics/BlockLength
+            original_rhs = rhs
             lhs_not_nil_check = not_nil_check?(lhs)
             lhs_receiver = lhs_not_nil_check || lhs
-            rhs_receiver = find_matching_receiver_invocation(strip_begin(rhs), lhs_receiver)
+            rhs = strip_begin(rhs)
+            rhs_not_nil_check = not_nil_check?(rhs)
+            rhs_method_chain = rhs_not_nil_check || rhs
+            rhs_receiver = find_matching_receiver_invocation(rhs_method_chain, lhs_receiver)
+            negated_nil_check = lhs_not_nil_check && rhs_not_nil_check
 
-            next if !cop_config['ConvertCodeThatCanStartToReturnNil'] && lhs_not_nil_check
-            next unless offending_node?(node, lhs_receiver, rhs, rhs_receiver)
+            next if !cop_config['ConvertCodeThatCanStartToReturnNil'] && lhs_not_nil_check &&
+                    !negated_nil_check
+            next unless offending_node?(
+              node,
+              lhs_receiver,
+              rhs_method_chain,
+              rhs_receiver,
+              negated_nil_check: negated_nil_check
+            )
 
             # Since we are evaluating every clause in potentially a complex chain of `and` nodes,
             # we need to ensure that there isn't an object check happening
@@ -187,10 +199,13 @@ module RuboCop
 
             report_offense(
               node,
-              rhs, rhs_receiver,
+              rhs_method_chain, rhs_receiver,
               range_with_surrounding_space(range: lhs.source_range, side: :right),
               range_with_surrounding_space(range: lhs_operator_range, side: :right),
-              offense_range: range_between(lhs.source_range.begin_pos, rhs.source_range.end_pos)
+              offense_range: range_between(
+                lhs.source_range.begin_pos,
+                original_rhs.source_range.end_pos
+              )
             ) do |corrector|
               corrector.replace(rhs_receiver, lhs_receiver.source)
             end
@@ -248,11 +263,15 @@ module RuboCop
           parts
         end
 
-        def offending_node?(node, lhs_receiver, rhs, rhs_receiver) # rubocop:disable Metrics/CyclomaticComplexity
+        def offending_node?(node, lhs_receiver, rhs, rhs_receiver, negated_nil_check: false) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
           return false if !matching_nodes?(lhs_receiver, rhs_receiver) || rhs_receiver.nil?
           return false if use_var_only_in_unless_modifier?(node, lhs_receiver)
           return false if chain_length(rhs, rhs_receiver) > max_chain_length
-          return false if unsafe_method_used?(node, rhs, rhs_receiver.parent)
+          return false if if negated_nil_check
+                            unsafe_method_used_in_negated_nil_check?(rhs, rhs_receiver.parent)
+                          else
+                            unsafe_method_used?(node, rhs, rhs_receiver.parent)
+                          end
           return false if rhs.send_type? && rhs.method?(:empty?)
 
           true
@@ -385,11 +404,27 @@ module RuboCop
           false
         end
 
+        def unsafe_method_used_in_negated_nil_check?(method_chain, method)
+          return true if unsafe_method_in_negated_nil_check?(method)
+
+          method.each_ancestor(:send) do |ancestor|
+            return false if ancestor.method?(:nil?) && ancestor.receiver == method_chain
+            return true unless config.cop_enabled?('Lint/SafeNavigationChain')
+            return true if unsafe_method_in_negated_nil_check?(ancestor)
+          end
+          false
+        end
+
         def unsafe_method?(node, send_node)
           return true if negated?(send_node)
 
           return false if node.respond_to?(:ternary?) && node.ternary?
 
+          send_node.assignment? ||
+            (!send_node.dot? && !send_node.safe_navigation?)
+        end
+
+        def unsafe_method_in_negated_nil_check?(send_node)
           send_node.assignment? ||
             (!send_node.dot? && !send_node.safe_navigation?)
         end

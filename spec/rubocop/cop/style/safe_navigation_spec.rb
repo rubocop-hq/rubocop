@@ -1275,6 +1275,38 @@ RSpec.describe RuboCop::Cop::Style::SafeNavigation, :config do
           RUBY
         end
 
+        it 'registers an offense for a negated nil check followed by a negated nil check on a method call' do
+          expect_offense(<<~RUBY, variable: variable)
+            !%{variable}.nil? && !%{variable}.bar.nil?
+            ^^{variable}^^^^^^^^^^^{variable}^^^^^^^^^ Use safe navigation (`&.`) instead [...]
+          RUBY
+
+          expect_correction(<<~RUBY)
+            !#{variable}&.bar.nil?
+          RUBY
+        end
+
+        it 'registers an offense in an unless modifier for a negated nil check on a method chain' do
+          expect_offense(<<~RUBY, variable: variable)
+            something unless !%{variable}.nil? && !%{variable}.one.two.nil?
+                             ^^{variable}^^^^^^^^^^^{variable}^^^^^^^^^^^^^ Use safe navigation (`&.`) instead [...]
+          RUBY
+
+          expect_correction(<<~RUBY)
+            something unless !#{variable}&.one&.two.nil?
+          RUBY
+        end
+
+        context 'MaxChainLength: 1' do
+          let(:cop_config) do
+            { 'ConvertCodeThatCanStartToReturnNil' => false, 'MaxChainLength' => 1 }
+          end
+
+          it 'allows a negated nil check followed by a negated nil check on a 2-call chain' do
+            expect_no_offenses("!#{variable}.nil? && !#{variable}.one.two.nil?")
+          end
+        end
+
         it 'registers an offense for an object check followed by a method calls that nil responds to' do
           expect_offense(<<~RUBY, variable: variable)
             %{variable} && %{variable}.to_i
