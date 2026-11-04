@@ -182,6 +182,158 @@ RSpec.describe RuboCop::Cop::Layout::BlockEndNewline, :config do
     RUBY
   end
 
+  it 'registers an offense and corrects when multiline block `}` is followed by an expression and using heredoc argument' do
+    expect_offense(<<~RUBY)
+      x = test {
+        foo(<<~EOS) } + bar
+                    ^ Expression at 2, 15 should be on its own line.
+          Heredoc text.
+        EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      x = test {
+        foo(<<~EOS)
+          Heredoc text.
+        EOS
+      } + bar
+    RUBY
+  end
+
+  it 'registers an offense and corrects when multiline block `}` is followed by a method call and using heredoc argument' do
+    expect_offense(<<~RUBY)
+      test {
+        foo(<<~EOS) }.bar
+                    ^ Expression at 2, 15 should be on its own line.
+          Heredoc text.
+        EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      test {
+        foo(<<~EOS)
+          Heredoc text.
+        EOS
+      }.bar
+    RUBY
+  end
+
+  it 'registers an offense and corrects when multiline block `}` is followed by the rest of the arguments and using heredoc argument' do
+    expect_offense(<<~RUBY)
+      do_something(test {
+        foo(<<~EOS) }, bar)
+                    ^ Expression at 2, 15 should be on its own line.
+          Heredoc text.
+        EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      do_something(test {
+        foo(<<~EOS)
+          Heredoc text.
+        EOS
+      }, bar)
+    RUBY
+  end
+
+  it 'registers an offense and corrects when multiline block `}` is followed by a comment and using heredoc argument' do
+    expect_offense(<<~RUBY)
+      test {
+        foo(<<~EOS) } # comment
+                    ^ Expression at 2, 15 should be on its own line.
+          Heredoc text.
+        EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      test {
+        foo(<<~EOS) # comment
+          Heredoc text.
+        EOS
+      }
+    RUBY
+  end
+
+  it 'registers an offense and corrects when multiline block `}` is followed by an expression and a comment and using heredoc argument' do
+    expect_offense(<<~RUBY)
+      x = test {
+        foo(<<~EOS) } + bar # comment
+                    ^ Expression at 2, 15 should be on its own line.
+          Heredoc text.
+        EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      x = test {
+        foo(<<~EOS) # comment
+          Heredoc text.
+        EOS
+      } + bar
+    RUBY
+  end
+
+  it 'registers an offense and corrects when multiline block `end` is followed by a method call and using heredoc argument' do
+    expect_offense(<<~RUBY)
+      test do
+        foo(<<~EOS) end.bar
+                    ^^^ Expression at 2, 15 should be on its own line.
+          Heredoc text.
+        EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      test do
+        foo(<<~EOS)
+          Heredoc text.
+        EOS
+      end.bar
+    RUBY
+  end
+
+  it 'registers an offense and corrects when nested multiline blocks `} }` close on the line of a heredoc argument' do
+    expect_offense(<<~RUBY)
+      test {
+        do_something {
+          foo(<<~EOS) } }
+                      ^ Expression at 3, 17 should be on its own line.
+                        ^ Expression at 3, 19 should be on its own line.
+            Heredoc text.
+          EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      test {
+        do_something {
+          foo(<<~EOS)
+            Heredoc text.
+          EOS
+      }
+      }
+    RUBY
+  end
+
+  it 'registers an offense and corrects when nested multiline blocks `end end` close on the line of a heredoc argument' do
+    expect_offense(<<~RUBY)
+      test do
+        do_something do
+          foo(<<~EOS) end end
+                      ^^^ Expression at 3, 17 should be on its own line.
+                          ^^^ Expression at 3, 21 should be on its own line.
+            Heredoc text.
+          EOS
+    RUBY
+
+    expect_correction(<<~RUBY)
+      test do
+        do_something do
+          foo(<<~EOS)
+            Heredoc text.
+          EOS
+      end
+      end
+    RUBY
+  end
+
   it 'registers an offense and corrects when a multiline block ends with a hash' do
     expect_offense(<<~RUBY)
       foo {

@@ -49,19 +49,31 @@ module RuboCop
 
         def register_offense(node, offense_range)
           add_offense(node.loc.end, message: message(node)) do |corrector|
-            replacement = "\n#{offense_range.source.lstrip}"
+            next if overlaps_inner_heredoc_correction?(node)
 
             if (heredoc = last_heredoc_argument(node.body))
-              corrector.remove(offense_range)
-              corrector.insert_after(heredoc.loc.heredoc_end, replacement)
+              correct_with_heredoc(corrector, offense_range, heredoc)
             else
-              corrector.replace(offense_range, replacement)
+              corrector.replace(offense_range, "\n#{offense_range.source.lstrip}")
             end
           end
         end
 
         def message(node)
           format(MSG, line: node.loc.end.line, column: node.loc.end.column + 1)
+        end
+
+        def overlaps_inner_heredoc_correction?(node)
+          node.each_descendant(:any_block).any? do |block|
+            same_line?(block.loc.end, node.loc.end) && heredoc_correction?(block)
+          end
+        end
+
+        def heredoc_correction?(node)
+          return false if node.single_line?
+          return false if begins_its_line?(node.loc.end)
+
+          !last_heredoc_argument(node.body).nil?
         end
 
         def last_heredoc_argument(node)
@@ -72,6 +84,21 @@ module RuboCop
           return heredoc if heredoc
 
           last_heredoc_argument(node.children.first)
+        end
+
+        def correct_with_heredoc(corrector, offense_range, heredoc)
+          range = offense_range.with(end_pos: code_end_pos(offense_range))
+
+          corrector.remove(range)
+          corrector.insert_after(heredoc.loc.heredoc_end, "\n#{range.source.strip}")
+        end
+
+        def code_end_pos(range)
+          comment = processed_source.comment_at_line(range.last_line)
+          return range.source_buffer.line_range(range.last_line).end_pos if comment.nil?
+
+          code_range = range.with(end_pos: comment.source_range.begin_pos)
+          code_range.begin_pos + code_range.source.rstrip.length
         end
 
         def offense_range(node)
