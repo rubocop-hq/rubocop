@@ -15,6 +15,10 @@ module RuboCop
       # lines, this cop does not register an offense; instead,
       # `Style/LineEndConcatenation` will pick up the offense if enabled.
       #
+      # This cop does not register an offense for concatenation with a heredoc
+      # either, because interpolating the heredoc into a string literal would not
+      # make the code easier to read.
+      #
       # Two modes are supported:
       # 1. `aggressive` style checks and corrects all occurrences of `+` where
       # either the left or right side of `+` is a string literal.
@@ -40,6 +44,11 @@ module RuboCop
       #   # accepted, line-end concatenation
       #   name = 'First' +
       #     'Last'
+      #
+      #   # accepted, concatenation with a heredoc
+      #   'Hello' + <<~TEXT
+      #     world
+      #   TEXT
       #
       # @example Mode: conservative
       #   # bad
@@ -73,6 +82,8 @@ module RuboCop
           return if line_end_concatenation?(node)
 
           topmost_plus_node = find_topmost_plus_node(node)
+          return if heredoc?(topmost_plus_node)
+
           parts = collect_parts(topmost_plus_node)
           return if mode == :conservative && !parts.first.str_type?
 
@@ -111,6 +122,10 @@ module RuboCop
           current
         end
 
+        def heredoc?(node)
+          node.each_descendant(:any_str).any?(&:heredoc?)
+        end
+
         def collect_parts(node, parts = [])
           return unless node
 
@@ -127,14 +142,7 @@ module RuboCop
         end
 
         def uncorrectable?(part)
-          part.multiline? || heredoc?(part) || part.each_descendant(:any_block).any?
-        end
-
-        def heredoc?(node)
-          return node.children.any? { |child| heredoc?(child) } if node.begin_type?
-          return false unless node.type?(:str, :dstr)
-
-          node.heredoc?
+          part.multiline? || part.each_descendant(:any_block).any?
         end
 
         def corrected_ancestor?(node)

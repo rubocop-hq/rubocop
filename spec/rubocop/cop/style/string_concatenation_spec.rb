@@ -232,38 +232,37 @@ RSpec.describe RuboCop::Cop::Style::StringConcatenation, :config do
   end
 
   context 'heredoc' do
-    it 'registers an offense but does not correct' do
-      expect_offense(<<~RUBY)
+    it 'does not register an offense' do
+      expect_no_offenses(<<~RUBY)
         "foo" + <<~STR
-        ^^^^^^^^^^^^^^ Prefer string interpolation to string concatenation.
           text
         STR
       RUBY
-
-      expect_no_corrections
     end
 
-    it 'registers an offense but does not correct when string concatenation with multiline heredoc text' do
-      expect_offense(<<~RUBY)
+    it 'does not register an offense when string concatenation with multiline heredoc text' do
+      expect_no_offenses(<<~RUBY)
         "foo" + <<~TEXT
-        ^^^^^^^^^^^^^^^ Prefer string interpolation to string concatenation.
           bar
           baz
         TEXT
       RUBY
-
-      expect_no_corrections
     end
 
-    it 'registers an offense but does not correct when the heredoc is parenthesized' do
-      expect_offense(<<~RUBY)
-        (<<-STRING) + 'bar'
-        ^^^^^^^^^^^^^^^^^^^ Prefer string interpolation to string concatenation.
-          foo
-        STRING
+    it 'does not register an offense when the heredoc is parenthesized' do
+      expect_no_offenses(<<~RUBY)
+        (<<~STR) + 'foo'
+          text
+        STR
       RUBY
+    end
 
-      expect_no_corrections
+    it 'does not register an offense when a method is called on the heredoc' do
+      expect_no_offenses(<<~RUBY)
+        'foo' + <<~STR.strip + 'bar'
+          text
+        STR
+      RUBY
     end
   end
 
