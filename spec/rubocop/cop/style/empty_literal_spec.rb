@@ -239,6 +239,61 @@ RSpec.describe RuboCop::Cop::Style::EmptyLiteral, :config do
         end
       RUBY
     end
+
+    it 'autocorrects Hash[] to {} without parentheses when it is the argument of an element reference' do
+      expect_offense(<<~RUBY)
+        foo[Hash[]]
+            ^^^^^^ Use hash literal `{}` instead of `Hash[]`.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        foo[{}]
+      RUBY
+    end
+
+    it 'autocorrects Hash.new to {} without parentheses when it is the first argument of an element assignment' do
+      expect_offense(<<~RUBY)
+        foo[Hash.new] = bar
+            ^^^^^^^^ Use hash literal `{}` instead of `Hash.new`.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        foo[{}] = bar
+      RUBY
+    end
+
+    it 'autocorrects Hash.new to {} without parentheses when it is the operand of a binary operator' do
+      expect_offense(<<~RUBY)
+        foo == Hash.new
+               ^^^^^^^^ Use hash literal `{}` instead of `Hash.new`.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        foo == {}
+      RUBY
+    end
+
+    it 'autocorrects Hash.new to {} with parentheses when it is the argument of an operator method called with a dot' do
+      expect_offense(<<~RUBY)
+        foo.== Hash.new
+               ^^^^^^^^ Use hash literal `{}` instead of `Hash.new`.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        foo.==({})
+      RUBY
+    end
+
+    it 'autocorrects Hash.new to {} with parentheses when it is the first argument of an operator method called with a dot' do
+      expect_offense(<<~RUBY)
+        foo.[] Hash.new, bar
+               ^^^^^^^^ Use hash literal `{}` instead of `Hash.new`.
+      RUBY
+
+      expect_correction(<<~RUBY)
+        foo.[]({}, bar)
+      RUBY
+    end
   end
 
   describe 'Empty String', :config do
