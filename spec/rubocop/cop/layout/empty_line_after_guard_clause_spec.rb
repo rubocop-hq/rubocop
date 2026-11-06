@@ -1,6 +1,65 @@
 # frozen_string_literal: true
 
 RSpec.describe RuboCop::Cop::Layout::EmptyLineAfterGuardClause, :config do
+  context 'when `AllowComments` is `true`' do
+    let(:cop_config) { { 'AllowComments' => true } }
+
+    it 'does not register an offense when a guard clause is followed by a comment and a blank line' do
+      expect_no_offenses(<<~RUBY)
+        def foo
+          return if need_return?
+          # Temporary comment while debugging
+
+          bar
+        end
+      RUBY
+    end
+
+    it 'registers an offense when a guard clause is followed by a comment and then code without a blank line' do
+      expect_offense(<<~RUBY)
+        def foo
+          return if need_return?
+          ^^^^^^^^^^^^^^^^^^^^^^ Add empty line after guard clause.
+          # Temporary comment while debugging
+          bar
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        def foo
+          return if need_return?
+          # Temporary comment while debugging
+
+          bar
+        end
+      RUBY
+    end
+  end
+
+  context 'when `AllowComments` is `false`' do
+    let(:cop_config) { { 'AllowComments' => false } }
+
+    it 'registers an offense when a guard clause is followed by a comment' do
+      expect_offense(<<~RUBY)
+        def foo
+          return if need_return?
+          ^^^^^^^^^^^^^^^^^^^^^^ Add empty line after guard clause.
+          # Temporary comment while debugging
+          bar
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        def foo
+          return if need_return?
+
+          # Temporary comment while debugging
+          bar
+        end
+      RUBY
+    end
+  end
+
   it 'does not register an offense when the clause is not followed by other code' do
     expect_no_offenses(<<~RUBY)
       return unless item.positive?

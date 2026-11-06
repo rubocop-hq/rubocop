@@ -105,6 +105,12 @@ module RuboCop
           next_line = node_range.last_line + 1
           if next_line_allowed_directive_comment?(next_line)
             node_range = processed_source.comment_at_line(next_line)
+            next_line += 1
+          end
+
+          while allow_comments? && (comment = processed_source.comment_at_line(next_line))
+            node_range = comment
+            next_line += 1
           end
 
           corrector.insert_after(node_range, "\n")
@@ -127,11 +133,19 @@ module RuboCop
           return true if next_line_empty?(line)
 
           next_line = line + 1
+          if allow_comments? && processed_source.comment_at_line(next_line)
+            return next_line_empty_or_allowed_directive_comment?(next_line)
+          end
+
           next_line_allowed_directive_comment?(next_line) && next_line_empty?(next_line)
         end
 
         def next_line_empty?(line)
           processed_source[line].blank?
+        end
+
+        def allow_comments?
+          cop_config.fetch('AllowComments', false)
         end
 
         def next_line_allowed_directive_comment?(line)

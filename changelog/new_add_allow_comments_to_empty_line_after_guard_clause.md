@@ -1,0 +1,1 @@
+* [#14702](https://github.com/rubocop/rubocop/issues/14702): Add `AllowComments` configuration option to `Layout/EmptyLineAfterGuardClause`. ([@karrasska][])

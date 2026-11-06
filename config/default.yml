@@ -636,6 +636,7 @@ Layout/EmptyComment:
 Layout/EmptyLineAfterGuardClause:
   Description: 'Add empty line after guard clause.'
   Enabled: true
+  AllowComments: false
   # Expected to be disabled by default in the next major release.
   # Goes with `GuardClause`; a blank line after a guard is a preference.
   Preview:
