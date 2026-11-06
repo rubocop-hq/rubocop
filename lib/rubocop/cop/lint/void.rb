@@ -75,6 +75,7 @@ module RuboCop
         BINARY_OPERATORS = %i[* / % + - == === != < > <= >= <=>].freeze
         UNARY_OPERATORS = %i[+@ -@ ~ !].freeze
         OPERATORS = (BINARY_OPERATORS + UNARY_OPERATORS).freeze
+        NON_VALUE_ARGUMENT_TYPES = %i[splat block_pass forwarded_args forwarded_restarg].freeze
         NONMUTATING_METHODS_WITH_BANG_VERSION = %i[capitalize chomp chop compact
                                                    delete_prefix delete_suffix downcase
                                                    encode flatten gsub lstrip merge next
@@ -153,13 +154,11 @@ module RuboCop
           check_expression(case_node.else_branch) if case_node.else_branch
         end
 
-        # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+        # rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         def check_void_op(node, &block)
           node = node.children.first while node&.begin_type?
           return unless node&.call_type? && OPERATORS.include?(node.method_name)
-          if !UNARY_OPERATORS.include?(node.method_name) && node.loc.dot && node.arguments.none?
-            return
-          end
+          return unless operation?(node)
 
           return if block && yield(node)
 
@@ -167,6 +166,19 @@ module RuboCop
                       message: format(OP_MSG, op: node.method_name)) do |corrector|
             autocorrect_void_op(corrector, node)
           end
+        end
+
+        def operation?(node)
+          return UNARY_OPERATORS.include?(node.method_name) || !node.loc.dot if node.arguments.none?
+          return false if !node.arguments.one? || trailing_comma?(node)
+
+          argument = node.first_argument
+
+          argument.hash_type? ? argument.braces? : !argument.type?(*NON_VALUE_ARGUMENT_TYPES)
+        end
+
+        def trailing_comma?(node)
+          node.last_argument.source_range.end.join(node.source_range.end).source.include?(',')
         end
 
         def check_var(node)
@@ -284,11 +296,8 @@ module RuboCop
         end
 
         def autocorrect_nonmutating_send(corrector, node, suggestion)
-          send_node = if node.call_type?
-                        node
-                      else
-                        node.send_node
-                      end
+          send_node = node.call_type? ? node : node.send_node
+
           corrector.replace(send_node.loc.selector, suggestion)
         end
 
