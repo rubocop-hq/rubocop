@@ -911,4 +911,45 @@ RSpec.describe RuboCop::Runner, :isolated_environment do
       end
     end
   end
+
+  describe '#run with the project index', :project_index do
+    it 'does not index RBS signatures that are target files' do
+      create_file('lib/foo.rb', <<~RUBY)
+        class Foo
+          BAR = 1
+
+          def baz; end
+        end
+
+        class Qux < Quux::Plugin::Base
+        end
+      RUBY
+
+      create_file('sig/foo.rbs', <<~RBS)
+        class Foo
+          BAR: Integer
+
+          def baz: () -> void
+        end
+
+        module Quux
+          class PluginError < StandardError
+          end
+        end
+      RBS
+
+      write_rubocop_config(
+        Dir.pwd,
+        'AllCops' => { 'UseProjectIndex' => true, 'Include' => ['**/*.rb', '**/*.rbs'] },
+        'Lint/ConstantReassignment' => { 'Enabled' => true },
+        'Lint/NameTypo' => { 'Enabled' => true }
+      )
+
+      cop_names = project_index_offenses(Dir.pwd).map { |offense| offense['cop_name'] }
+
+      expect(cop_names).not_to include(
+        'Lint/ConstantReassignment', 'Lint/DuplicateMethods', 'Lint/NameTypo'
+      )
+    end
+  end
 end

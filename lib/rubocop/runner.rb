@@ -136,6 +136,9 @@ module RuboCop
     # particular run happens to include, or single-file runs (editors, CI
     # sharding) would see different offenses than full runs. The project is
     # rooted at the directory of the configuration that enabled the index.
+    #
+    # The project's RBS signatures are left out: they declare methods and constants
+    # rather than define them, and may declare only part of a namespace.
     def project_index_files(target_files)
       root = @config_store.for_pwd.base_dir_for_path_parameters
       project_files = begin
@@ -143,6 +146,7 @@ module RuboCop
       rescue Errno::ENOENT
         target_files
       end
+      project_files = project_files.reject { |file| File.extname(file) == '.rbs' }
 
       (project_files | bundled_gem_files).sort
     end
