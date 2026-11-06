@@ -195,6 +195,13 @@ RSpec.describe RuboCop::Cop::Layout::IndentationStyle, :config do
       expect_no_offenses("x = <<HELLO\n\thello\n\t\n\t\t\nhello\nHELLO")
     end
 
+    it 'accepts a line with tab indentation followed by spaces for alignment' do
+      expect_no_offenses(<<~RUBY)
+        \ts.description = 'Use foo' \\
+        \t                ' as bar.'
+      RUBY
+    end
+
     it 'registers and corrects an offense for a line indented with fractional number of' \
        'indentation groups by rounding down' do
       expect_offense(<<~RUBY)
